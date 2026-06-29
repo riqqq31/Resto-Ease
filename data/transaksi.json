@@ -1,0 +1,101 @@
+[
+  {
+    "id_transaksi": "TRX-20260629184603671-837",
+    "pesanan_terkait": {
+      "id_pesanan": "PSN-20260625163527408-396",
+      "meja_aktif": {
+        "nomor_meja": 1,
+        "is_tersedia": false
+      },
+      "status_pesanan": "selesai",
+      "list_detail": [
+        {
+          "item_menu": {
+            "id_menu": "MNU-NASIGORENG",
+            "nama_menu": "Nasi Goreng",
+            "harga": 50000.0,
+            "kategori": "Makanan",
+            "is_tersedia": true,
+            "tipe": "Menu"
+          },
+          "kuantitas": 1,
+          "sub_total": 50000.0
+        }
+      ]
+    },
+    "total_akhir": 55000.0,
+    "pajak": 5000.0,
+    "uang_diterima": 60000.0,
+    "kembalian": 5000.0
+  },
+  {
+    "id_transaksi": "TRX-20260629184603671-837",
+    "pesanan_terkait": {
+      "id_pesanan": "PSN-20260625163527408-396",
+      "meja_aktif": {
+        "nomor_meja": 1,
+        "is_tersedia": false
+      },
+      "status_pesanan": "selesai",
+      "list_detail": [
+        {
+          "item_menu": {
+            "id_menu": "MNU-NASIGORENG",
+            "nama_menu": "Nasi Goreng",
+            "harga": 50000.0,
+            "kategori": "Makanan",
+            "is_tersedia": true,
+            "tipe": "Menu"
+          },
+          "kuantitas": 1,
+          "sub_total": 50000.0
+        }
+      ]
+    },
+    "total_akhir": 55000.0,
+    "pajak": 5000.0,
+    "uang_diterima": 60000.0,
+    "kembalian": 5000.0
+  },
+  {
+    "id_transaksi": "TRX-20260629191424767-135",
+    "pesanan_terkait": {
+      "id_pesanan": "PSN-20260629191336675-981",
+      "meja_aktif": {
+        "nomor_meja": 1,
+        "is_tersedia": true
+      },
+      "status_pesanan": "selesai",
+      "list_detail": [
+        {
+          "item_menu": {
+            "id_menu": "MNU-NASIGORENG",
+            "nama_menu": "Nasi Goreng",
+            "harga": 50000.0,
+            "kategori": "Makanan",
+            "is_tersedia": true,
+            "tipe": "Menu"
+          },
+          "kuantitas": 1,
+          "sub_total": 50000.0
+        },
+        {
+          "item_menu": {
+            "id_menu": "MNU-AYAM",
+            "nama_menu": "Ayam ",
+            "harga": 15000.0,
+            "kategori": "Makanan",
+            "is_tersedia": true,
+            "tipe": "Menu"
+          },
+          "kuantitas": 1,
+          "sub_total": 15000.0
+        }
+      ]
+    },
+    "total_akhir": 71500.0,
+    "pajak": 6500.0,
+    "uang_diterima": 71500.0,
+    "kembalian": 0.0
+  }
+]

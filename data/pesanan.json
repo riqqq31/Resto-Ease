@@ -1,0 +1,20 @@
+[
+  {
+    "id_pesanan": "PSN-20260625172938216-284",
+    "meja_aktif": {
+      "nomor_meja": 2,
+      "is_tersedia": false
+    },
+    "status_pesanan": "aktif",
+    "list_detail": []
+  },
+  {
+    "id_pesanan": "PSN-20260626093918895-450",
+    "meja_aktif": {
+      "nomor_meja": 3,
+      "is_tersedia": false
+    },
+    "status_pesanan": "aktif",
+    "list_detail": []
+  }
+]
