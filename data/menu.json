@@ -1,13 +1,5 @@
 [
   {
-    "id_menu": "MNU-NASIGORENG",
-    "nama_menu": "Nasi Goreng",
-    "harga": 50000.0,
-    "kategori": "Makanan",
-    "is_tersedia": true,
-    "tipe": "Menu"
-  },
-  {
     "id_menu": "MNU-AYAM",
     "nama_menu": "Ayam ",
     "harga": 15000.0,

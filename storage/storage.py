@@ -145,3 +145,24 @@ def init_storage() -> None:
         for i in range(1, 9):  # 8 meja default
             daftar_meja[i] = Meja(i)
         save_meja()
+
+
+def hapus_semua_data() -> None:
+    """Menghapus seluruh data dari memori dan file JSON persisten."""
+    global daftar_menu, daftar_meja, pesanan_aktif, riwayat_transaksi
+    
+    # Hapus dari memori
+    daftar_menu.clear()
+    daftar_meja.clear()
+    pesanan_aktif.clear()
+    riwayat_transaksi.clear()
+    
+    # Hapus file fisik
+    files_to_delete = ["menu.json", "meja.json", "pesanan.json", "transaksi.json"]
+    for filename in files_to_delete:
+        path = DATA_DIR / filename
+        if path.exists():
+            path.unlink()
+            
+    # Inisialisasi ulang meja default setelah dihapus
+    init_storage()

@@ -22,325 +22,513 @@ from exceptions import (
 
 st.set_page_config(
     page_title="RestoEase — Sistem Pemesanan Digital",
-    page_icon="R",
+    page_icon="🍽️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 st.markdown("""
 <style>
-    /* ── FONT: Plus Jakarta Sans ── */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+    /* ── FONT ── */
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz@1,9..144&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-    html, body, [class*="css"], .stApp, .stMarkdown, p, span, div,
-    input, label, button, textarea, select {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
+    html, body, [class*="st-"] { font-family: 'IBM Plex Sans', sans-serif !important; }
+    .resto-display, h1, h2, h3, .section-title { font-family: 'Fraunces', serif !important; font-style: italic; }
+    .resto-data, .meja-num { font-family: 'IBM Plex Mono', monospace !important; font-variant-numeric: tabular-nums; }
+
+    /* Streamlit membulatkan semua container secara default — kecilkan agar sesuai konsep kertas */
+    div[data-testid="stVerticalBlockBorderWrapper"],
+    button[kind], .stButton>button {
+        border-radius: 4px !important;
+        box-shadow: none !important;
     }
 
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #0d0d0d; }
-    ::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #444; }
+    /* Sembunyikan chrome default Streamlit yang tidak relevan untuk software kasir */
+    #MainMenu, footer, header { visibility: hidden; }
 
-    /* ── CANVAS & SIDEBAR ── */
-    .stApp { background-color: #0a0a0a !important; color: #cccccc !important; }
-    [data-testid="stSidebar"] {
-        background-color: #0d0d0d !important;
-        border-right: 1px solid #1e1e1e !important;
-    }
-    [data-testid="stSidebar"] .stRadio label {
-        color: #ffffff !important; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
-    }
-
-    /* ── TYPOGRAPHY ── */
-    .page-header {
-        color: #ffffff; font-size: 1.85rem; font-weight: 800;
-        text-transform: uppercase; letter-spacing: 3px; margin-bottom: 0.25rem;
-    }
-    .page-subheader {
-        color: #555; font-size: 0.85rem; margin-bottom: 1.5rem;
-        font-weight: 400; letter-spacing: 0.3px;
+    /* ── KELAS KUSTOM BERDASARKAN DESIGN.MD ── */
+    :root {
+        --bg-base: #171310;
+        --bg-surface: #241E17;
+        --bg-surface-raised: #2E271D;
+        --accent-ember: #E2963A;
+        --accent-ember-dim: #8A5A22;
+        --ink-primary: #F3ECE0;
+        --ink-muted: #8F8577;
+        --rule-hairline: rgba(243,236,224,0.12);
+        --status-kosong: #6E8F6A;
+        --status-terisi: #C1573B;
+        --status-reserved: #C9A227;
+        --paper: #EFE7D8;
+        --paper-ink: #2A241C;
     }
 
-    /* ── STRIPE DIVIDER ── */
-    .m-stripe {
-        height: 3px;
-        background: linear-gradient(90deg, #1c69d4 0%, #1c69d4 50%, #e22718 50%, #e22718 100%);
-        margin: 8px 0 24px 0; border-radius: 2px;
+    
+    /* Target specifically the column containing ticket-rail-bg */
+    div[data-testid="column"]:has(.ticket-rail-bg) {
+        background-color: var(--paper) !important;
+        color: var(--paper-ink) !important;
+        border-radius: 4px !important;
+        padding: 16px !important;
+        mask-image: radial-gradient(circle at 10px 0px, transparent 10px, black 11px),
+                    radial-gradient(circle at 10px 100%, transparent 10px, black 11px);
+        mask-size: 20px 100%;
+        mask-position: 0 0, 0 100%;
+        mask-repeat: repeat-x;
+    }
+    
+    div[data-testid="column"]:has(.ticket-rail-bg) * {
+        color: var(--paper-ink) !important;
+    }
+    
+    div[data-testid="column"]:has(.ticket-rail-bg) .stButton > button {
+        border-color: var(--paper-ink) !important;
     }
 
-    /* ── TABLE CARDS ── */
+    /* Ticket Rail (Cart) */
+    .ticket-rail {
+        background-color: var(--paper) !important;
+        color: var(--paper-ink) !important;
+        border-radius: 4px;
+        padding: 16px;
+        /* Perforasi bergerigi atas & bawah */
+        mask-image: radial-gradient(circle at 10px 0px, transparent 10px, black 11px),
+                    radial-gradient(circle at 10px 100%, transparent 10px, black 11px);
+        mask-size: 20px 100%;
+        mask-position: 0 0, 0 100%;
+        mask-repeat: repeat-x;
+    }
+    .ticket-rail-header {
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--paper-ink);
+        padding-bottom: 8px;
+        color: var(--paper-ink);
+    }
+    .ticket-rail-item {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px dotted var(--paper-ink);
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+    }
+    .ticket-rail-total {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+        border-top: 2px solid var(--paper-ink);
+        padding-top: 8px;
+    }
+    .empty-cart { text-align: center; padding: 48px 16px; color: var(--paper-ink); font-size: 0.9rem; }
+    .empty-cart-icon { font-size: 14px; margin-bottom: 12px; color: var(--paper-ink); font-weight: 700; }
+
+    /* Nota / Struk */
+    .struk-container {
+        max-width: 380px;
+        margin: 0 auto;
+        background-color: var(--paper);
+        color: var(--paper-ink);
+        padding: 20px;
+        font-family: 'IBM Plex Mono', monospace;
+        border-radius: 4px;
+    }
+    .struk-header {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 24px;
+        text-align: center;
+        margin-bottom: 16px;
+    }
+
+    
+    /* Meja Grid Colors */
+    .meja-kosong, .meja-terisi {
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        margin-bottom: 8px;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
     .meja-kosong {
-        background: linear-gradient(145deg, #111, #161616);
-        border: 1px solid #1e1e1e; border-top: 3px solid #0fa336;
-        border-radius: 6px; padding: 22px 12px;
-        text-align: center; margin-bottom: 8px; transition: all 0.22s ease;
-    }
-    .meja-kosong:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 28px rgba(15, 163, 54, 0.18);
-        border-color: #0fa336;
+        background-color: rgba(110, 143, 106, 0.15);
+        border: 2px solid var(--status-kosong);
     }
     .meja-terisi {
-        background: linear-gradient(145deg, #111, #161616);
-        border: 1px solid #1e1e1e; border-top: 3px solid #e22718;
-        border-radius: 6px; padding: 22px 12px;
-        text-align: center; margin-bottom: 8px; transition: all 0.22s ease;
+        background-color: rgba(193, 87, 59, 0.15);
+        border: 2px solid var(--status-terisi);
     }
-    .meja-terisi:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 28px rgba(226, 39, 24, 0.18);
-        border-color: #e22718;
+    .meja-num {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 8px 0;
+        font-family: 'IBM Plex Mono', monospace;
+        color: var(--ink-primary);
+    }
+    .meja-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--ink-muted);
+    }
+
+    /* Meja Chips */
+    .meja-btn-kosong .stButton > button, .meja-btn-terisi .stButton > button {
+        background-color: var(--bg-surface) !important;
+        border: 1px solid var(--rule-hairline) !important;
+        border-radius: 4px !important;
+        color: var(--ink-primary) !important;
+        text-align: left !important;
+    }
+    .meja-btn-kosong .stButton > button::before {
+        content: '●'; color: var(--status-kosong); margin-right: 6px; font-size: 0.8rem;
+    }
+    .meja-btn-terisi .stButton > button::before {
+        content: '●'; color: var(--status-terisi); margin-right: 6px; font-size: 0.8rem;
+    }
+    .meja-btn-kosong .stButton > button:hover, .meja-btn-terisi .stButton > button:hover {
+        border-color: var(--accent-ember) !important;
+        color: var(--accent-ember) !important;
+    }
+    /* Tombol Primer */
+    .btn-primary .stButton > button {
+        background-color: var(--accent-ember) !important;
+        color: var(--paper-ink) !important;
+        border: none !important;
+    }
+
+    /* General Layout tweaks */
+    .section-title {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 22px;
+        color: var(--ink-primary);
+        margin-bottom: 16px;
+        margin-top: 24px;
+    }
+    .activity-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--rule-hairline);
+        border-radius: 4px;
+        padding: 12px;
+    }
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--rule-hairline);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background-color: var(--accent-ember);
+        margin-right: 12px;
+    }
+    .activity-meja { color: var(--ink-primary); font-weight: 600; font-size: 0.9rem; }
+    .activity-id { color: var(--ink-muted); font-size: 0.8rem; font-family: 'IBM Plex Mono', monospace; }
+    .activity-total { color: var(--accent-ember); font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+
+    /* Dashboard Stats */
+    .stat-label { color: var(--ink-muted); font-size: 0.9rem; margin-bottom: 4px; }
+    .stat-value { font-family: 'IBM Plex Mono', monospace !important; font-size: 2rem; font-weight: 600; color: var(--ink-primary); }
+    .stat-value-sm { font-family: 'IBM Plex Mono', monospace !important; font-size: 1.3rem; font-weight: 600; color: var(--accent-ember); }
+    .stat-sub { color: var(--ink-muted); font-size: 0.8rem; }
+    .stat-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--rule-hairline);
+        border-radius: 6px;
+        padding: 16px;
+    }
+    .stat-card-accent {
+        border-color: var(--accent-ember-dim);
+    }
+
+    /* Meja Status Elements */
+    .meja-status {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+    }
+    .dot-dim {
+        background-color: var(--status-kosong);
+    }
+    .dot-accent {
+        background-color: var(--status-terisi);
+        box-shadow: 0 0 6px var(--status-terisi);
     }
     .item-badge {
         display: inline-block;
-        background: rgba(226,39,24,0.15); color: #e22718;
-        border: 1px solid rgba(226,39,24,0.35); border-radius: 10px;
-        font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
-        letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;
+        background-color: var(--accent-ember);
+        color: var(--paper-ink);
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-top: 6px;
     }
 
-    /* ── MENU CARDS ── */
-    .menu-card {
-        background: linear-gradient(145deg, #111, #161616);
-        border: 1px solid #1e1e1e; border-radius: 6px;
-        padding: 14px 16px; margin-bottom: 6px; transition: all 0.18s ease;
-    }
-    .menu-card:hover { background: #181818; border-color: #333; }
-
-    /* ── BADGES ── */
-    .badge-makanan {
-        background: rgba(28,105,212,0.12); color: #5599ff;
-        padding: 2px 10px; border-radius: 4px;
-        font-size: 0.66rem; font-weight: 700; letter-spacing: 1px;
-        text-transform: uppercase; border: 1px solid rgba(28,105,212,0.35);
-    }
-    .badge-minuman {
-        background: rgba(139,92,246,0.12); color: #a78bfa;
-        padding: 2px 10px; border-radius: 4px;
-        font-size: 0.66rem; font-weight: 700; letter-spacing: 1px;
-        text-transform: uppercase; border: 1px solid rgba(139,92,246,0.35);
-    }
-    .badge-diskon {
-        background: rgba(226,39,24,0.12); color: #ff6b5b;
-        padding: 2px 10px; border-radius: 4px;
-        font-size: 0.66rem; font-weight: 700; letter-spacing: 1px;
-        text-transform: uppercase; border: 1px solid rgba(226,39,24,0.35);
-    }
-    .badge-nonaktif {
-        background: rgba(255,255,255,0.04); color: #555;
-        padding: 2px 8px; border-radius: 4px;
-        font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 1px; border: 1px solid #222;
-    }
-
-    /* ── METRIC CARDS ── */
-    .metric-card {
-        background: linear-gradient(145deg, #0d0d0d, #111);
-        border: 1px solid #1e1e1e; border-radius: 6px;
-        padding: 16px 20px; text-align: center;
-    }
-    .metric-label {
-        color: #555; font-size: 0.68rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.5px;
-    }
-    .metric-value {
-        color: #ffffff; font-size: 1.5rem; font-weight: 800; margin-top: 4px;
-    }
-    .metric-sub {
-        color: #444; font-size: 0.7rem; margin-top: 2px;
-    }
-
-    /* ── SIDEBAR METRIC ── */
-    .sidebar-metric {
-        background: #111; border: 1px solid #1e1e1e; border-radius: 6px;
-        padding: 10px 14px; margin-bottom: 8px;
-    }
-    .sidebar-metric-label {
-        color: #444; font-size: 0.65rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1.2px;
-    }
-    .sidebar-metric-value {
-        color: #fff; font-size: 1.05rem; font-weight: 800; margin-top: 3px;
-    }
-
-    /* ── BUTTONS: default (secondary/outlined) ── */
-    .stButton > button {
-        background: transparent !important; color: #888 !important;
-        border: 1px solid #2a2a2a !important; border-radius: 5px !important;
-        font-weight: 600 !important; font-size: 0.82rem !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        letter-spacing: 0.4px !important; padding: 10px 20px !important;
-        transition: all 0.18s ease !important;
-    }
-    .stButton > button:hover {
-        background: #181818 !important; color: #fff !important;
-        border-color: #444 !important; transform: translateY(-1px) !important;
-    }
-
-    /* Accent (primary / blue) */
+    /* Button Variants */
     .btn-accent .stButton > button {
-        background: linear-gradient(135deg, #1c69d4, #1650a8) !important;
-        color: #fff !important; border: none !important;
-        border-radius: 5px !important; font-weight: 700 !important;
-        box-shadow: 0 4px 16px rgba(28,105,212,0.3) !important;
+        background-color: var(--accent-ember) !important;
+        color: var(--paper-ink) !important;
+        border: none !important;
+        font-weight: 600 !important;
     }
     .btn-accent .stButton > button:hover {
-        background: linear-gradient(135deg, #2277e8, #1c69d4) !important;
-        box-shadow: 0 6px 22px rgba(28,105,212,0.45) !important;
-        transform: translateY(-2px) !important;
+        background-color: var(--accent-ember-dim) !important;
     }
-
-    /* Danger (red) */
     .btn-danger .stButton > button {
-        background: rgba(226,39,24,0.08) !important; color: #e22718 !important;
-        border: 1px solid rgba(226,39,24,0.35) !important; border-radius: 5px !important;
-        font-weight: 700 !important;
+        background-color: var(--status-terisi) !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 600 !important;
     }
     .btn-danger .stButton > button:hover {
-        background: rgba(226,39,24,0.2) !important;
-        border-color: #e22718 !important; transform: translateY(-1px) !important;
+        background-color: #a04530 !important;
+    }
+    .btn-sm .stButton > button {
+        padding: 4px 12px !important;
+        font-size: 0.8rem !important;
     }
 
-    /* Success (green) */
-    .btn-success .stButton > button {
-        background: linear-gradient(135deg, #0fa336, #0a7928) !important;
-        color: #fff !important; border: none !important;
-        border-radius: 5px !important; font-weight: 700 !important;
-        box-shadow: 0 4px 16px rgba(15,163,54,0.28) !important;
+    /* Confirmation Box */
+    .confirm-box {
+        background-color: rgba(193, 87, 59, 0.15);
+        border: 1px solid var(--status-terisi);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 12px;
     }
-    .btn-success .stButton > button:hover {
-        box-shadow: 0 6px 22px rgba(15,163,54,0.45) !important;
-        transform: translateY(-2px) !important;
+    .confirm-box-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--status-terisi);
+        margin-bottom: 6px;
     }
-
-    /* ── INPUT FIELDS ── */
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div {
-        background: #111 !important; border: 1px solid #222 !important;
-        color: #fff !important; border-radius: 5px !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-    }
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus {
-        border-color: #1c69d4 !important;
-        box-shadow: 0 0 0 2px rgba(28,105,212,0.18) !important;
-    }
-    .stTextInput > div > div > input::placeholder { color: #333 !important; }
-
-    /* ── STRUK ── */
-    .struk-container {
-        background: #0d0d0d; color: #ccc; border-radius: 6px;
-        padding: 24px; font-family: 'Courier New', monospace;
-        font-size: 0.85rem; white-space: pre;
-        box-shadow: 0 4px 28px rgba(0,0,0,0.6);
-        border: 1px solid #1e1e1e; border-top: 3px solid #1c69d4;
+    .confirm-box-desc {
+        font-size: 0.9rem;
+        color: var(--ink-muted);
     }
 
-    /* ── DIVIDERS ── */
-    hr { border-color: #181818 !important; margin: 1.5rem 0 !important; }
-
-    /* ── TABS ── */
-    .stTabs [data-baseweb="tab-list"] {
-        background: #0d0d0d !important; border-radius: 0 !important;
-        padding: 0 !important; gap: 0 !important;
-        border-bottom: 1px solid #1e1e1e !important;
+    /* Quick Access Buttons (Dashboard) */
+    .qa-btn .stButton > button {
+        background-color: var(--bg-surface) !important;
+        border: 1px solid var(--rule-hairline) !important;
+        color: var(--ink-primary) !important;
+        font-weight: 500 !important;
     }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 0 !important; color: #444 !important;
-        font-weight: 700 !important; letter-spacing: 0.5px !important;
-        padding: 10px 20px !important; font-size: 0.82rem !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        transition: color 0.18s ease !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: transparent !important; color: #fff !important;
-        border-bottom: 2px solid #1c69d4 !important;
-    }
-    .stTabs [data-baseweb="tab"]:hover { color: #bbb !important; }
-
-    /* ── ALERTS ── */
-    .stSuccess { background: rgba(15,163,54,0.08) !important; border-color: rgba(15,163,54,0.4) !important; color: #0fa336 !important; border-radius: 6px !important; }
-    .stError   { background: rgba(226,39,24,0.08)  !important; border-color: rgba(226,39,24,0.4) !important; color: #e22718 !important; border-radius: 6px !important; }
-    .stWarning { background: rgba(255,165,0,0.08)  !important; border-color: rgba(255,165,0,0.4) !important; color: #ffa500 !important; border-radius: 6px !important; }
-    .stInfo    { background: rgba(28,105,212,0.08) !important; border-color: rgba(28,105,212,0.4) !important; color: #5599ff !important; border-radius: 6px !important; }
-
-    /* ── EMPTY STATES ── */
-    .empty-state { text-align: center; padding: 48px 24px; color: #333; }
-    .empty-state-icon {
-        width: 52px; height: 52px; border-radius: 50%;
-        background: #111; border: 1px solid #1e1e1e;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 1.4rem; margin-bottom: 14px; color: #333;
-    }
-    .empty-state-title { font-size: 1rem; font-weight: 700; color: #444; margin-bottom: 6px; }
-    .empty-state-desc  { font-size: 0.82rem; color: #2e2e2e; }
-
-    /* ── EXPANDERS ── */
-    .stExpander { border: 1px solid #1e1e1e !important; border-radius: 6px !important; }
-    .stExpander header { background: #111 !important; color: #bbb !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }
-
-    /* ── FORM ── */
-    [data-testid="stForm"] {
-        background: #0d0d0d; border: 1px solid #1e1e1e;
-        border-radius: 8px; padding: 20px;
+    .qa-btn .stButton > button:hover {
+        border-color: var(--accent-ember) !important;
+        color: var(--accent-ember) !important;
     }
 
-    /* ── SIDEBAR NAV BUTTON ── */
+    /* Dashboard Hero */
+    .dash-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 0;
+        border-bottom: 1px solid var(--rule-hairline);
+        margin-bottom: 24px;
+    }
+    .dash-greeting {
+        font-size: 0.9rem;
+        color: var(--ink-muted);
+        letter-spacing: 0.5px;
+    }
+    .dash-title {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 2rem;
+        color: var(--ink-primary);
+    }
+    .dash-subtitle {
+        font-size: 0.85rem;
+        color: var(--ink-muted);
+        margin-top: 4px;
+    }
+    .dash-clock {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--ink-muted);
+    }
+    .dash-clock-accent { color: var(--accent-ember); }
+
+    /* Menu Management Cards */
+    .menu-mgmt-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--rule-hairline);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 8px;
+    }
+    .menu-mgmt-card.inactive {
+        opacity: 0.5;
+    }
+    .menu-mgmt-nama {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--ink-primary);
+        margin-bottom: 6px;
+    }
+    .menu-mgmt-harga {
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 600;
+        color: var(--accent-ember);
+    }
+
+    /* Badges */
+    .badge-makanan {
+        display: inline-block;
+        background-color: rgba(226, 150, 58, 0.2);
+        color: var(--accent-ember);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-right: 4px;
+    }
+    .badge-minuman {
+        display: inline-block;
+        background-color: rgba(110, 143, 106, 0.2);
+        color: var(--status-kosong);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-right: 4px;
+    }
+    .badge-diskon {
+        display: inline-block;
+        background-color: rgba(201, 162, 39, 0.2);
+        color: var(--status-reserved);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-right: 4px;
+    }
+    .badge-aktif {
+        display: inline-block;
+        background-color: rgba(110, 143, 106, 0.2);
+        color: var(--status-kosong);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    .badge-nonaktif {
+        display: inline-block;
+        background-color: rgba(193, 87, 59, 0.2);
+        color: var(--status-terisi);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    /* Page Header */
+    .page-header {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 1.8rem;
+        color: var(--ink-primary);
+    }
+    .page-subheader {
+        color: var(--ink-muted);
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+    }
+    .m-stripe {
+        width: 48px;
+        height: 3px;
+        background-color: var(--accent-ember);
+        border-radius: 2px;
+        margin: 8px 0 12px 0;
+    }
+
+    /* Sidebar */
+    .sidebar-metric {
+        padding: 6px 4px;
+    }
+    .sidebar-metric-label {
+        font-size: 0.75rem;
+        color: var(--ink-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    .sidebar-metric-value {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--ink-primary);
+    }
+    .sidebar-footer {
+        text-align: center;
+        color: var(--ink-muted);
+        font-size: 0.7rem;
+        padding: 20px 0 8px 0;
+        letter-spacing: 0.5px;
+    }
+
+    /* Nav Buttons */
     .nav-btn .stButton > button {
-        background: transparent !important; color: #555 !important;
-        border: none !important; border-radius: 5px !important;
-        text-align: left !important; font-size: 0.85rem !important;
-        font-weight: 600 !important; letter-spacing: 0.3px !important;
-        padding: 10px 14px !important; width: 100% !important;
-        transition: all 0.15s ease !important;
+        background: transparent !important;
+        border: none !important;
+        color: var(--ink-muted) !important;
+        text-align: left !important;
+        padding: 6px 8px !important;
+        font-size: 0.9rem !important;
     }
     .nav-btn .stButton > button:hover {
-        background: #161616 !important; color: #fff !important;
-        transform: none !important;
+        color: var(--accent-ember) !important;
     }
     .nav-btn-active .stButton > button {
-        background: rgba(28,105,212,0.12) !important;
-        color: #5599ff !important;
-        border-left: 2px solid #1c69d4 !important;
-        padding-left: 12px !important;
+        color: var(--accent-ember) !important;
+        font-weight: 600 !important;
     }
 
-    /* ── CONFIRM BOX ── */
-    .confirm-box {
-        background: rgba(226,39,24,0.06); border: 1px solid rgba(226,39,24,0.25);
-        border-radius: 6px; padding: 14px 16px; margin: 10px 0;
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 48px 16px;
+        color: var(--ink-muted);
     }
-    .confirm-box-title { color: #e22718; font-weight: 700; font-size: 0.88rem; margin-bottom: 4px; }
-    .confirm-box-desc  { color: #666; font-size: 0.8rem; }
+    .empty-state-icon { font-size: 2rem; margin-bottom: 12px; }
+    .empty-state-title { font-size: 1.1rem; font-weight: 600; color: var(--ink-primary); margin-bottom: 6px; }
+    .empty-state-desc { font-size: 0.9rem; }
 
-    /* ── PAYMENT BOXES ── */
-    .kembalian-box {
-        background: rgba(15,163,54,0.08); border: 1px solid rgba(15,163,54,0.35);
-        border-radius: 8px; padding: 20px; text-align: center; margin: 12px 0;
-    }
-    .kurang-box {
-        background: rgba(226,39,24,0.08); border: 1px solid rgba(226,39,24,0.35);
-        border-radius: 8px; padding: 20px; text-align: center; margin: 12px 0;
-    }
-    .pay-label  { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-    .pay-amount { font-size: 2rem; font-weight: 800; }
-    .pay-hint   { font-size: 0.72rem; margin-top: 6px; opacity: 0.5; }
+    /* Payment card */
+    .pay-label { font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 4px; }
+    .pay-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--ink-primary); }
 
-    /* ── SIDEBAR FOOTER ── */
-    .sidebar-footer {
-        color: #2a2a2a; font-size: 0.68rem; text-align: center;
-        padding: 12px 0 4px 0; border-top: 1px solid #181818; margin-top: 16px;
-        font-family: 'Plus Jakarta Sans', sans-serif;
+    /* Metric cards (kasir, riwayat) */
+    .metric-card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--rule-hairline);
+        border-radius: 6px;
+        padding: 12px;
     }
-
-    /* ── HIDE STREAMLIT BRANDING ── */
-    #MainMenu { visibility: hidden; }
-    footer { visibility: hidden; }
-    [data-testid="stToolbar"] { display: none; }
+    .metric-label { font-size: 0.8rem; color: var(--ink-muted); }
+    .metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--ink-primary); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -356,7 +544,9 @@ def init_session():
         st.session_state.storage_initialized = True
 
     if "halaman" not in st.session_state:
-        st.session_state.halaman = "peta_meja"
+        st.session_state.halaman = "dashboard"
+    if "prev_halaman" not in st.session_state:
+        st.session_state.prev_halaman = "dashboard"
     if "meja_dipilih" not in st.session_state:
         st.session_state.meja_dipilih = None
     if "notif" not in st.session_state:
@@ -398,33 +588,30 @@ def render_sidebar():
         jam_str = now.strftime("%H:%M")
 
         st.markdown(f"""
-        <div style='text-align:center; padding: 20px 0 12px 0;'>
-            <div style='font-size:1.6rem; font-weight:800; color:#fff;
-                        text-transform:uppercase; letter-spacing:3px;
-                        font-family:"Plus Jakarta Sans",sans-serif;'>RestoEase</div>
-            <div style='font-size:0.68rem; color:#333; text-transform:uppercase;
-                        letter-spacing:2px; margin-top:4px;
-                        font-family:"Plus Jakarta Sans",sans-serif;'>Sistem Pemesanan Digital</div>
-        </div>
-        <div class="m-stripe" style="margin: 8px 0 18px 0;"></div>
-        <div style='text-align:center; margin-bottom:20px;'>
-            <div style='font-size:0.7rem; color:#3a3a3a; letter-spacing:0.5px;
-                        font-family:"Plus Jakarta Sans",sans-serif;'>{tgl_str}</div>
-            <div style='font-size:1.5rem; font-weight:800; color:#1c69d4;
-                        letter-spacing:3px; margin-top:2px;
-                        font-family:"Plus Jakarta Sans",sans-serif;'>{jam_str}</div>
+        <div style='text-align:center; padding: 22px 0 14px 0;'>
+            <div style='font-size:10px; font-weight:700; color:#383838;
+                        text-transform:uppercase; letter-spacing:0.14em; margin-bottom:6px;
+                        font-family:"Inter",sans-serif;'>SISTEM PEMESANAN</div>
+            <div style='font-size:1.5rem; font-weight:900; color:#F0F0F0;
+                        text-transform:uppercase; letter-spacing:2px;
+                        font-family:"Inter",sans-serif;'>RestoEase</div>
+            <div class="m-stripe" style="margin: 8px auto 16px auto;"></div>
+            <div style='font-size:11px; color:#383838; letter-spacing:0.4px;
+                        font-family:"Inter",sans-serif;'>{tgl_str}</div>
+            <div style='font-size:1.6rem; font-weight:800; color:var(--accent-ember);
+                        letter-spacing:4px; margin-top:2px;
+                        font-family:"Inter",sans-serif;'>{jam_str}</div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<p style='font-size:0.65rem; color:#333; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.8px; "
-                    "margin-bottom:6px; font-family:\"Plus Jakarta Sans\",sans-serif;'>Navigasi</p>",
+        st.markdown("<p class='section-title' style='padding:0 4px;'>Navigasi</p>",
                     unsafe_allow_html=True)
 
         nav_items = [
-            ("peta_meja",   "Peta Meja"),
-            ("kelola_menu", "Kelola Menu"),
-            ("riwayat",     "Riwayat Transaksi"),
+            ("dashboard",    "· Dashboard"),
+            ("peta_meja",    "· Peta Meja"),
+            ("kelola_menu",  "· Kelola Menu"),
+            ("riwayat",      "· Riwayat Transaksi"),
         ]
 
         halaman_aktif = st.session_state.halaman
@@ -435,26 +622,31 @@ def render_sidebar():
             css_class = "nav-btn-active nav-btn" if is_aktif else "nav-btn"
             st.markdown(f"<div class='{css_class}'>", unsafe_allow_html=True)
             if st.button(label, key=f"nav_{key}", use_container_width=True):
-                st.session_state.halaman = key if key != "peta_meja" else "peta_meja"
+                st.session_state.halaman = key
                 st.session_state.meja_dipilih = None
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<hr style='border-color:#181818; margin:18px 0;'>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size:0.65rem; color:#333; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.8px; "
-                    "margin-bottom:10px; font-family:\"Plus Jakarta Sans\",sans-serif;'>Status Hari Ini</p>",
+        st.markdown("<hr style='border-color:rgba(255,255,255,0.05); margin:16px 0;'>", unsafe_allow_html=True)
+        st.markdown("<p class='section-title' style='padding:0 4px;'>Status Hari Ini</p>",
                     unsafe_allow_html=True)
 
         semua_meja = service.get_semua_meja()
         meja_terisi = [m for m in semua_meja if not m.is_tersedia]
+        meja_kosong = [m for m in semua_meja if m.is_tersedia]
         total_trx = len(storage.riwayat_transaksi)
         total_pendapatan = sum(t.total_akhir for t in storage.riwayat_transaksi)
+        semua_menu = service.get_semua_menu()
+        menu_aktif = sum(1 for m in semua_menu if m.is_tersedia)
 
         st.markdown(f"""
         <div class="sidebar-metric">
             <div class="sidebar-metric-label">Meja Terisi</div>
-            <div class="sidebar-metric-value">{len(meja_terisi)} / {len(semua_meja)}</div>
+            <div class="sidebar-metric-value">{len(meja_terisi)} <span style="color:#383838;font-size:0.8rem;font-weight:400;">/ {len(semua_meja)}</span></div>
+        </div>
+        <div class="sidebar-metric">
+            <div class="sidebar-metric-label">Meja Kosong</div>
+            <div class="sidebar-metric-value">{len(meja_kosong)}</div>
         </div>
         <div class="sidebar-metric">
             <div class="sidebar-metric-label">Transaksi</div>
@@ -462,16 +654,42 @@ def render_sidebar():
         </div>
         <div class="sidebar-metric">
             <div class="sidebar-metric-label">Pendapatan</div>
-            <div class="sidebar-metric-value" style="font-size:0.9rem;">Rp {total_pendapatan:,.0f}</div>
+            <div class="sidebar-metric-value" style="font-size:0.88rem;">Rp {total_pendapatan:,.0f}</div>
+        </div>
+        <div class="sidebar-metric">
+            <div class="sidebar-metric-label">Menu Aktif</div>
+            <div class="sidebar-metric-value">{menu_aktif}</div>
         </div>
         """, unsafe_allow_html=True)
+        
+        st.markdown("<hr style='border-color:rgba(255,255,255,0.05); margin:16px 0;'>", unsafe_allow_html=True)
+        st.markdown("<p class='section-title' style='padding:0 4px; color:#C1573B;'>⚠️ Pengaturan Bahaya</p>", unsafe_allow_html=True)
+        
+        if "confirm_reset_db" not in st.session_state:
+            st.session_state.confirm_reset_db = False
+
+        if not st.session_state.confirm_reset_db:
+            if st.button("Hapus Seluruh Database", use_container_width=True):
+                st.session_state.confirm_reset_db = True
+                st.rerun()
+        else:
+            st.warning("Yakin hapus SEMUA data? Ini tidak bisa dibatalkan.")
+            col_y, col_n = st.columns(2)
+            if col_y.button("Ya, Hapus!", type="primary", use_container_width=True):
+                service.hapus_semua_data()
+                st.session_state.confirm_reset_db = False
+                st.session_state.halaman = "dashboard"
+                set_notif("success", "Database berhasil direset (Hard Delete).")
+                st.rerun()
+            if col_n.button("Batal", use_container_width=True):
+                st.session_state.confirm_reset_db = False
+                st.rerun()
 
         st.markdown("""
         <div class="sidebar-footer">
-            RestoEase v1.0 &nbsp;&middot;&nbsp; OOP Project
+            RestoEase v2.0 &nbsp;&middot;&nbsp; OOP Project
         </div>
         """, unsafe_allow_html=True)
-
 
 # ============================================================
 # HELPER
@@ -485,15 +703,209 @@ def _get_jumlah_item_meja(nomor_meja: int) -> int:
         return 0
 
 
+def _render_page_header(title: str, subtitle: str = ""):
+    st.markdown(f'<div class="page-header">{title}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
+    if subtitle:
+        st.markdown(f'<div class="page-subheader">{subtitle}</div>', unsafe_allow_html=True)
+
+
+# ============================================================
+# HALAMAN 0 — DASHBOARD (Landing Page)
+# ============================================================
+
+def render_dashboard():
+    now = datetime.now()
+    jam_str = now.strftime("%H:%M")
+    tgl_str = now.strftime("%A, %d %B %Y")
+    hour = now.hour
+    if hour < 11:
+        greeting = "Selamat Pagi"
+    elif hour < 15:
+        greeting = "Selamat Siang"
+    elif hour < 18:
+        greeting = "Selamat Sore"
+    else:
+        greeting = "Selamat Malam"
+
+    tampilkan_notif()
+
+    # ── Data ──
+    semua_meja = service.get_semua_meja()
+    meja_terisi = [m for m in semua_meja if not m.is_tersedia]
+    meja_kosong = [m for m in semua_meja if m.is_tersedia]
+    riwayat = service.get_riwayat_transaksi()
+    total_pendapatan = sum(t.total_akhir for t in riwayat)
+    semua_menu = service.get_semua_menu()
+    menu_aktif = sum(1 for m in semua_menu if m.is_tersedia)
+
+    # ── Hero Section ──
+    jam_h, jam_m = jam_str.split(":")
+    st.markdown(f"""
+    <div class="dash-hero">
+        <div>
+            <div class="dash-greeting">{greeting}</div>
+            <div class="dash-title">Dashboard RestoEase</div>
+            <div class="dash-subtitle">{tgl_str}</div>
+        </div>
+        <div class="dash-clock">
+            <span class="dash-clock-accent">{jam_h}</span><span style="color:#222222;">:{jam_m}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 5 Stat Cards ──
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Meja Terisi</div>
+            <div class="stat-value">{len(meja_terisi)}</div>
+            <div class="stat-sub">dari {len(semua_meja)} total</div>
+        </div>""", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Meja Kosong</div>
+            <div class="stat-value">{len(meja_kosong)}</div>
+            <div class="stat-sub">siap digunakan</div>
+        </div>""", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Transaksi</div>
+            <div class="stat-value">{len(riwayat)}</div>
+            <div class="stat-sub">total selesai</div>
+        </div>""", unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"""
+        <div class="stat-card stat-card-accent">
+            <div class="stat-label">Pendapatan</div>
+            <div class="stat-value-sm">Rp {total_pendapatan:,.0f}</div>
+            <div class="stat-sub">total keseluruhan</div>
+        </div>""", unsafe_allow_html=True)
+    with c5:
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Menu Aktif</div>
+            <div class="stat-value">{menu_aktif}</div>
+            <div class="stat-sub">dari {len(semua_menu)} menu</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Peta Meja + Activity Feed ──
+    col_meja, col_feed = st.columns([3, 2], gap="large")
+
+    with col_meja:
+        st.markdown("<p class='section-title'>Peta Meja — Klik untuk Kelola</p>",
+                    unsafe_allow_html=True)
+        semua_meja_sorted = sorted(semua_meja, key=lambda m: m.nomor_meja)
+        n_cols_mini = 5
+        rows_mini = [semua_meja_sorted[i:i+n_cols_mini]
+                     for i in range(0, len(semua_meja_sorted), n_cols_mini)]
+
+        for row in rows_mini:
+            cols_mini = st.columns(n_cols_mini)
+            for col_m, meja in zip(cols_mini, row):
+                with col_m:
+                    kosong = meja.is_tersedia
+                    n_items = 0 if kosong else _get_jumlah_item_meja(meja.nomor_meja)
+                    btn_css = "meja-btn-kosong" if kosong else "meja-btn-terisi"
+                    # Label multi-line: nomor meja + status kecil
+                    status_txt = "Kosong" if kosong else f"{n_items}i·Aktif"
+                    btn_label = f"{meja.nomor_meja}\n{status_txt}"
+                    st.markdown(f"<div class='{btn_css}'>", unsafe_allow_html=True)
+                    if st.button(btn_label, key=f"dash_meja_{meja.nomor_meja}",
+                                 use_container_width=True):
+                        if kosong:
+                            try:
+                                service.buat_pesanan_baru(meja.nomor_meja)
+                            except MejaTidakTersediaError:
+                                pass
+                            except RestoEaseError as e:
+                                set_notif("error", str(e)); st.rerun()
+                        st.session_state.prev_halaman = "dashboard"
+                        st.session_state.meja_dipilih = meja.nomor_meja
+                        st.session_state.halaman = "pesanan"
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style='display:flex; gap:20px; font-size:11px; margin-top:8px;'>
+            <span style='color:#383838;'><span style='color:#383838;'>&#9679;</span> Kosong</span>
+            <span style='color:#383838;'><span style='color:var(--accent-ember);'>&#9679;</span> Terisi</span>
+        </div>""", unsafe_allow_html=True)
+
+    with col_feed:
+        st.markdown("<p class='section-title'>Aktivitas Terakhir</p>", unsafe_allow_html=True)
+        if not riwayat:
+            st.markdown("""
+            <div class="activity-card">
+                <div style="text-align:center; padding:28px 12px; color:#383838;">
+                    <div style="font-size:10px; font-weight:700; text-transform:uppercase;
+                                letter-spacing:0.14em; margin-bottom:10px; color:#383838;">KOSONG</div>
+                    <div style="font-size:13px; font-weight:600; color:#888888;">Belum ada transaksi</div>
+                    <div style="font-size:11px; color:#383838; margin-top:4px;">
+                        Checkout pertama akan muncul di sini
+                    </div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+        else:
+            recent = list(reversed(riwayat))[:6]
+            items_html = ""
+            for i, trx in enumerate(recent):
+                meja_no = trx.pesanan_terkait.meja_aktif.nomor_meja
+                n_items = sum(d.kuantitas for d in trx.pesanan_terkait.list_detail)
+                dot_opacity = max(0.3, 1 - i * 0.12)
+                items_html += f"""
+                <div class="activity-item">
+                    <div class="activity-dot" style="opacity:{dot_opacity:.2f};"></div>
+                    <div style="flex:1;">
+                        <div class="activity-meja">Meja {meja_no}
+                            <span style="color:#383838; font-weight:400; font-size:11px;">
+                                &nbsp;· {n_items} item
+                            </span>
+                        </div>
+                        <div class="activity-id">{trx.id_transaksi[:20]}…</div>
+                    </div>
+                    <div class="activity-total">Rp {trx.total_akhir:,.0f}</div>
+                </div>"""
+            st.markdown(f'<div class="activity-card">{items_html}</div>',
+                        unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Quick Actions — 3 styled buttons (all neutral ghost) ──
+    st.markdown("<p class='section-title'>Quick Actions</p>", unsafe_allow_html=True)
+    qa1, qa2, qa3 = st.columns(3)
+    with qa1:
+        st.markdown("<div class='qa-btn'>", unsafe_allow_html=True)
+        if st.button("Peta Meja", key="qa_peta", use_container_width=True):
+            st.session_state.halaman = "peta_meja"; st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    with qa2:
+        st.markdown("<div class='qa-btn'>", unsafe_allow_html=True)
+        if st.button("Kelola Menu", key="qa_menu", use_container_width=True):
+            st.session_state.halaman = "kelola_menu"; st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+    with qa3:
+        st.markdown("<div class='qa-btn'>", unsafe_allow_html=True)
+        if st.button("Riwayat Transaksi", key="qa_riwayat", use_container_width=True):
+            st.session_state.halaman = "riwayat"; st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 # ============================================================
 # HALAMAN 1 — PETA MEJA
 # ============================================================
 
 def render_peta_meja():
-    st.markdown('<div class="page-header">Peta Meja</div>', unsafe_allow_html=True)
-    st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subheader">Pilih meja untuk membuat atau mengelola pesanan aktif</div>',
-                unsafe_allow_html=True)
+    if st.button("⬅ Kembali", key="back_peta"):
+        st.session_state.halaman = "dashboard"
+        st.rerun()
+        
+    _render_page_header("Peta Meja", "Pilih meja untuk membuat atau mengelola pesanan aktif")
 
     tampilkan_notif()
 
@@ -503,26 +915,38 @@ def render_peta_meja():
     n_kosong = sum(1 for m in semua_meja_sorted if m.is_tersedia)
     n_terisi = len(semua_meja_sorted) - n_kosong
 
-    c1, c2, c3 = st.columns(3)
+    # ── Stat cards ──
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Total Meja</div>
-            <div class="metric-value">{len(semua_meja_sorted)}</div>
+        st.markdown(f"""
+        <div class="stat-card stat-card-accent">
+            <div class="stat-label">Total Meja</div>
+            <div class="stat-value">{len(semua_meja_sorted)}</div>
         </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label" style="color:#0fa336;">Kosong</div>
-            <div class="metric-value" style="color:#0fa336;">{n_kosong}</div>
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Kosong</div>
+            <div class="stat-value">{n_kosong}</div>
         </div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label" style="color:#e22718;">Terisi</div>
-            <div class="metric-value" style="color:#e22718;">{n_terisi}</div>
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Terisi</div>
+            <div class="stat-value">{n_terisi}</div>
+        </div>""", unsafe_allow_html=True)
+    with c4:
+        pct = int(n_terisi / len(semua_meja_sorted) * 100) if semua_meja_sorted else 0
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Tingkat Hunian</div>
+            <div class="stat-value">{pct}%</div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    n_cols = 4
+    # ── Grid Meja ──
+    n_cols = 5
     rows = [semua_meja_sorted[i:i+n_cols] for i in range(0, len(semua_meja_sorted), n_cols)]
 
     for row in rows:
@@ -531,9 +955,10 @@ def render_peta_meja():
             with col:
                 nomor = meja.nomor_meja
                 kosong = meja.is_tersedia
-                status_label = "Kosong" if kosong else "Terisi"
                 class_meja = "meja-kosong" if kosong else "meja-terisi"
-                status_color = "#0fa336" if kosong else "#e22718"
+                status_color = "var(--status-kosong)" if kosong else "var(--status-terisi)"
+                status_label = "Kosong" if kosong else "Terisi"
+                dot_class = "dot-dim" if kosong else "dot-accent"
 
                 badge_html = ""
                 if not kosong:
@@ -542,17 +967,11 @@ def render_peta_meja():
                         badge_html = f"<div><span class='item-badge'>{n_items} item</span></div>"
 
                 st.markdown(f"""
-                <div class='{class_meja}'>
-                    <div style='font-size:0.72rem; font-weight:700; color:#333;
-                                text-transform:uppercase; letter-spacing:2px; margin-bottom:6px;'>
-                        Meja
-                    </div>
-                    <div style='font-size:1.8rem; font-weight:800; color:#fff; line-height:1;'>
-                        {nomor}
-                    </div>
-                    <div style='font-size:0.7rem; color:{status_color}; margin-top:6px;
-                                text-transform:uppercase; letter-spacing:1.5px; font-weight:700;'>
-                        {status_label}
+                <div class="{class_meja}">
+                    <div class="meja-label">Meja</div>
+                    <div class="meja-num">{nomor}</div>
+                    <div class="meja-status" style="color:{status_color};">
+                        <span class="status-dot {dot_class}"></span>{status_label}
                     </div>
                     {badge_html}
                 </div>
@@ -560,9 +979,11 @@ def render_peta_meja():
 
                 if kosong:
                     st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
-                    if st.button("Buka Pesanan", key=f"buka_meja_{nomor}", use_container_width=True):
+                    if st.button("＋ Buka Pesanan", key=f"buka_meja_{nomor}",
+                                 use_container_width=True):
                         try:
                             service.buat_pesanan_baru(nomor)
+                            st.session_state.prev_halaman = "peta_meja"
                             st.session_state.meja_dipilih = nomor
                             st.session_state.halaman = "pesanan"
                             st.rerun()
@@ -572,40 +993,46 @@ def render_peta_meja():
                             set_notif("error", str(e)); st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
                 else:
-                    if st.button("Lihat Pesanan", key=f"lihat_meja_{nomor}", use_container_width=True):
+                    if st.button("Lihat Pesanan →", key=f"lihat_meja_{nomor}",
+                                 use_container_width=True):
+                        st.session_state.prev_halaman = "peta_meja"
                         st.session_state.meja_dipilih = nomor
                         st.session_state.halaman = "pesanan"
                         st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='display:flex; gap:24px; font-size:0.78rem; color:#333;
-                border-top:1px solid #181818; padding-top:12px;'>
-        <span><span style='color:#0fa336; font-weight:700;'>&#9679;</span>
-              <span style='color:#444;'> Kosong &mdash; Siap dipakai</span></span>
-        <span><span style='color:#e22718; font-weight:700;'>&#9679;</span>
-              <span style='color:#444;'> Terisi &mdash; Ada pesanan aktif</span></span>
+    <div style='display:flex; gap:24px; font-size:11px; color:#383838;
+                border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;'>
+        <span><span style='color:#383838; font-weight:700;'>&#9679;</span>
+              <span style='color:#383838;'> Kosong &mdash; Siap dipakai</span></span>
+        <span><span style='color:var(--accent-ember); font-weight:700;'>&#9679;</span>
+              <span style='color:#383838;'> Terisi &mdash; Ada pesanan aktif</span></span>
     </div>
     """, unsafe_allow_html=True)
 
 
 # ============================================================
-# HALAMAN 2 — PESANAN MEJA (CRUD UTAMA)
+# HALAMAN 2 — PESANAN MEJA (Split Panel)
 # ============================================================
 
 def render_pesanan():
     nomor_meja = st.session_state.meja_dipilih
 
-    col_back, col_title = st.columns([1, 7])
+    # ── Header & Back ──
+    col_back, col_title = st.columns([1, 8])
     with col_back:
-        if st.button("Kembali", key="back_pesanan"):
-            st.session_state.halaman = "peta_meja"
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("← Kembali", key="back_pesanan"):
+            st.session_state.halaman = st.session_state.get("prev_halaman", "dashboard")
             st.session_state.meja_dipilih = None
             st.session_state.confirm_hapus_item = None
             st.rerun()
     with col_title:
-        st.markdown(f'<div class="page-header">Pesanan Meja {nomor_meja}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
+        _render_page_header(
+            f"Pesanan — Meja {nomor_meja}",
+            "Tambah menu dari katalog, kelola keranjang, lalu lanjut ke kasir"
+        )
 
     tampilkan_notif()
 
@@ -614,35 +1041,37 @@ def render_pesanan():
     except PesananTidakAdaError:
         st.markdown("""
         <div class="empty-state">
-            <div class="empty-state-icon">!</div>
+            <div class="empty-state-icon">—</div>
             <div class="empty-state-title">Tidak ada pesanan aktif</div>
             <div class="empty-state-desc">Meja ini belum memiliki pesanan yang terbuka.</div>
         </div>""", unsafe_allow_html=True)
-        if st.button("Kembali ke Peta Meja"):
-            st.session_state.halaman = "peta_meja"
+        st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
+        if st.button("← Kembali"):
+            st.session_state.halaman = st.session_state.get("prev_halaman", "dashboard")
             st.session_state.meja_dipilih = None
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    st.markdown(f"<span style='font-size:0.75rem; color:#333; font-family:monospace;'>"
+    # ── Info ID pesanan ──
+    st.markdown(f"<span style='font-size:11px; color:#383838; font-family:monospace;'>"
                 f"ID: {pesanan.id_pesanan}</span>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
-    n_keranjang = sum(d.kuantitas for d in pesanan.list_detail)
-    tab_label_cart = f"Keranjang  ({n_keranjang} item)" if n_keranjang > 0 else "Keranjang"
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    tab_tambah, tab_keranjang = st.tabs(["Tambah Menu", tab_label_cart])
+    # ── Split Panel: Katalog (kiri) | Keranjang (kanan) ──
+    col_katalog, col_keranjang = st.columns([3, 2], gap="large")
 
-    # ── TAB TAMBAH ITEM ──
-    with tab_tambah:
-        st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px;'>"
-                    "Katalog Menu</p>", unsafe_allow_html=True)
+    # ─────────────── KATALOG ───────────────
+    with col_katalog:
+        st.markdown("<p class='section-title'>Katalog Menu</p>", unsafe_allow_html=True)
 
-        col_search, col_filter = st.columns([3, 2])
+        col_search, col_filter = st.columns([2, 3])
         with col_search:
-            search_q = st.text_input("Cari menu", placeholder="Ketik nama menu...",
-                                     key="search_menu_input", label_visibility="collapsed")
+            search_q = st.text_input(
+                "Cari", placeholder="Cari menu...",
+                key="search_menu_input", label_visibility="collapsed"
+            )
         with col_filter:
             kategori_filter = st.radio(
                 "Filter", ["Semua", "Makanan", "Minuman"],
@@ -659,100 +1088,108 @@ def render_pesanan():
             daftar = [m for m in daftar if search_q.lower() in m.nama_menu.lower()]
 
         if not daftar:
-            not_found_msg = (f"Tidak ada menu yang cocok dengan \"{search_q}\""
+            not_found_msg = (f"Tidak ada hasil untuk \"{search_q}\""
                              if search_q else "Tidak ada menu tersedia.")
             st.markdown(f"""
-            <div class="empty-state">
-                <div class="empty-state-icon">?</div>
+            <div class="empty-state" style="padding:32px 16px;">
+                <div class="empty-state-icon">—</div>
                 <div class="empty-state-title">Menu tidak ditemukan</div>
                 <div class="empty-state-desc">{not_found_msg}</div>
             </div>""", unsafe_allow_html=True)
         else:
+            from models import MenuSpesial
             for menu in daftar:
-                from models import MenuSpesial
                 is_spesial = isinstance(menu, MenuSpesial)
+                kat_key = "minuman" if menu.kategori == "Minuman" else "makanan"
+                badge = f'<span class="badge-{kat_key}">{menu.kategori}</span>'
+                if is_spesial:
+                    badge += f' <span class="badge-diskon">Diskon {menu.persen_diskon:.0f}%</span>'
 
-                with st.container():
-                    c1, c2, c3, c4 = st.columns([4, 2, 1, 1])
-                    with c1:
-                        kat_key = "minuman" if menu.kategori == "Minuman" else "makanan"
-                        badge = f'<span class="badge-{kat_key}">{menu.kategori}</span>'
-                        if is_spesial:
-                            badge += f' <span class="badge-diskon">Diskon {menu.persen_diskon:.0f}%</span>'
-                        st.markdown(f"**{menu.nama_menu}**")
-                        st.markdown(badge, unsafe_allow_html=True)
-                    with c2:
-                        if is_spesial:
-                            st.markdown(
-                                f"<span style='color:#444; text-decoration:line-through; "
-                                f"font-size:0.8rem;'>Rp {menu.harga:,.0f}</span>",
-                                unsafe_allow_html=True)
-                            st.markdown(
-                                f"<span style='color:#fff; font-weight:700;'>"
-                                f"Rp {menu.harga_efektif():,.0f}</span>",
-                                unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"**Rp {menu.harga:,.0f}**")
-                    with c3:
-                        qty_input = st.number_input(
-                            "Qty", min_value=1, max_value=99, value=1,
-                            key=f"qty_{menu.id_menu}",
-                            label_visibility="collapsed",
-                            help="Jumlah yang ingin dipesan"
-                        )
-                    with c4:
-                        st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
-                        if st.button("Tambah", key=f"add_{menu.id_menu}", use_container_width=True):
-                            try:
-                                service.tambah_item_ke_pesanan(nomor_meja, menu.id_menu, qty_input)
-                                set_notif("success", f"{menu.nama_menu} x{qty_input} ditambahkan.")
-                                st.rerun()
-                            except InputTidakValidError as e:
-                                set_notif("error", f"Input tidak valid: {e}"); st.rerun()
-                            except RestoEaseError as e:
-                                set_notif("error", str(e)); st.rerun()
-                        st.markdown("</div>", unsafe_allow_html=True)
+                if is_spesial:
+                    harga_html = (
+                        f'<span class="catalog-harga-coret">Rp {menu.harga:,.0f}</span> '
+                        f'<span class="catalog-harga">Rp {menu.harga_efektif():,.0f}</span>'
+                    )
+                else:
+                    harga_html = f'<span class="catalog-harga">Rp {menu.harga:,.0f}</span>'
 
-                    st.markdown("<hr style='margin:6px 0; border-color:#181818;'>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="catalog-item">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <div class="catalog-nama">{menu.nama_menu}</div>
+                            <div style="margin-top:4px;">{badge}</div>
+                        </div>
+                        <div style="text-align:right;">{harga_html}</div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
 
-    # ── TAB KERANJANG ──
-    with tab_keranjang:
+                c_qty, c_add = st.columns([1, 2])
+                with c_qty:
+                    qty_input = st.number_input(
+                        "Qty", min_value=1, max_value=99, value=1,
+                        key=f"qty_{menu.id_menu}",
+                        label_visibility="collapsed",
+                    )
+                with c_add:
+                    st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
+                    if st.button(f"＋ Tambah", key=f"add_{menu.id_menu}",
+                                 use_container_width=True):
+                        try:
+                            service.tambah_item_ke_pesanan(nomor_meja, menu.id_menu, qty_input)
+                            set_notif("success", f"{menu.nama_menu} ×{qty_input} ditambahkan.")
+                            st.rerun()
+                        except InputTidakValidError as e:
+                            set_notif("error", f"Input tidak valid: {e}"); st.rerun()
+                        except RestoEaseError as e:
+                            set_notif("error", str(e)); st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ─────────────── KERANJANG ───────────────
+    with col_keranjang:
+        st.markdown('<div class="ticket-rail-bg"></div>', unsafe_allow_html=True)
         pesanan = service.get_pesanan_aktif(nomor_meja)
         list_detail = pesanan.list_detail
+        n_keranjang = sum(d.kuantitas for d in list_detail)
+
+        cart_header_txt = f"Keranjang &nbsp;<span style='color:var(--accent-ember);'>({n_keranjang} item)</span>" \
+            if n_keranjang > 0 else "Keranjang"
+        st.markdown(f"<div class='ticket-rail-header'>{cart_header_txt}</div>",
+                    unsafe_allow_html=True)
 
         if not list_detail:
             st.markdown("""
-            <div class="empty-state">
-                <div class="empty-state-icon">0</div>
-                <div class="empty-state-title">Keranjang masih kosong</div>
-                <div class="empty-state-desc">Tambahkan menu dari tab <b>Tambah Menu</b>.</div>
+            <div class="empty-cart">
+                <div class="empty-cart-icon">KOSONG</div>
+                <div style="font-size:13px; color:#383838;">Keranjang masih kosong</div>
+                <div style="font-size:11px; color:#222222; margin-top:4px;">
+                    Tambah menu dari katalog di sebelah kiri
+                </div>
             </div>""", unsafe_allow_html=True)
         else:
-            st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                        "text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px;'>"
-                        "Item Pesanan</p>", unsafe_allow_html=True)
-
             # Konfirmasi hapus
             if st.session_state.confirm_hapus_item:
                 id_konfirm = st.session_state.confirm_hapus_item
                 nama_konfirm = next(
-                    (d.item_menu.nama_menu for d in list_detail if d.item_menu.id_menu == id_konfirm),
+                    (d.item_menu.nama_menu for d in list_detail
+                     if d.item_menu.id_menu == id_konfirm),
                     id_konfirm
                 )
                 st.markdown(f"""
                 <div class="confirm-box">
                     <div class="confirm-box-title">Konfirmasi Hapus</div>
                     <div class="confirm-box-desc">
-                        Hapus <b style="color:#ccc;">{nama_konfirm}</b> dari keranjang?
+                        Hapus <b style="color:#F0F0F0;">{nama_konfirm}</b> dari keranjang?
                     </div>
                 </div>""", unsafe_allow_html=True)
-                cc1, cc2, _ = st.columns([1, 1, 4])
+                cc1, cc2 = st.columns(2)
                 with cc1:
                     st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
-                    if st.button("Ya, Hapus", key="konfirm_ya_hapus", use_container_width=True):
+                    if st.button("Ya, Hapus", key="konfirm_ya_hapus",
+                                 use_container_width=True):
                         try:
                             service.hapus_item_dari_pesanan(nomor_meja, id_konfirm)
-                            set_notif("info", f"{nama_konfirm} dihapus dari pesanan.")
+                            set_notif("info", f"{nama_konfirm} dihapus.")
                             st.session_state.confirm_hapus_item = None
                             st.rerun()
                         except RestoEaseError as e:
@@ -761,109 +1198,81 @@ def render_pesanan():
                             st.rerun()
                     st.markdown("</div>", unsafe_allow_html=True)
                 with cc2:
-                    if st.button("Batal", key="konfirm_batal_hapus", use_container_width=True):
+                    if st.button("Batal", key="konfirm_batal_hapus",
+                                 use_container_width=True):
                         st.session_state.confirm_hapus_item = None
                         st.rerun()
 
             for detail in list_detail:
-                with st.container():
-                    c1, c2, c3, c4, c5 = st.columns([4, 2, 1, 1, 1])
-                    with c1:
-                        st.markdown(f"**{detail.item_menu.nama_menu}**")
-                        st.markdown(
-                            f"<small style='color:#444;'>@ Rp {detail.item_menu.harga_efektif():,.0f} / item</small>",
-                            unsafe_allow_html=True)
-                    with c2:
-                        st.markdown(
-                            f"<span style='font-weight:700; color:#fff;'>"
-                            f"Rp {detail.sub_total:,.0f}</span>",
-                            unsafe_allow_html=True)
-                    with c3:
-                        qty_edit = st.number_input(
-                            "Qty", min_value=1, max_value=99,
-                            value=detail.kuantitas,
-                            key=f"edit_{detail.item_menu.id_menu}",
-                            label_visibility="collapsed",
-                            help="Ubah jumlah item"
-                        )
-                    with c4:
-                        if st.button("Ubah", key=f"upd_{detail.item_menu.id_menu}",
-                                     help="Update kuantitas"):
-                            try:
-                                service.update_item_pesanan(nomor_meja, detail.item_menu.id_menu, qty_edit)
-                                set_notif("success",
-                                          f"{detail.item_menu.nama_menu} diubah menjadi x{qty_edit}.")
-                                st.rerun()
-                            except (InputTidakValidError, ItemPesananTidakAdaError) as e:
-                                set_notif("error", str(e)); st.rerun()
-                    with c5:
-                        st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
-                        if st.button("Hapus", key=f"del_{detail.item_menu.id_menu}",
-                                     help="Hapus item dari pesanan"):
-                            st.session_state.confirm_hapus_item = detail.item_menu.id_menu
+                nama = detail.item_menu.nama_menu
+                subtotal_item = detail.sub_total
+                st.markdown(f"""
+                <div class="ticket-rail-item"><span>{nama}</span><span>Rp {subtotal_item:,.0f}</span></div>
+                </div>""", unsafe_allow_html=True)
+                cq, cu, cd = st.columns([2, 1, 1])
+                with cq:
+                    qty_edit = st.number_input(
+                        "Qty", min_value=1, max_value=99,
+                        value=detail.kuantitas,
+                        key=f"edit_{detail.item_menu.id_menu}",
+                        label_visibility="collapsed",
+                    )
+                with cu:
+                    st.markdown("<div class='btn-sm'>", unsafe_allow_html=True)
+                    if st.button("✓", key=f"upd_{detail.item_menu.id_menu}",
+                                 help="Simpan perubahan qty", use_container_width=True):
+                        try:
+                            service.update_item_pesanan(
+                                nomor_meja, detail.item_menu.id_menu, qty_edit
+                            )
+                            set_notif("success", f"{nama} → ×{qty_edit}")
                             st.rerun()
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        except (InputTidakValidError, ItemPesananTidakAdaError) as e:
+                            set_notif("error", str(e)); st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+                with cd:
+                    st.markdown("<div class='btn-danger btn-sm'>", unsafe_allow_html=True)
+                    if st.button("✕", key=f"del_{detail.item_menu.id_menu}",
+                                 help="Hapus item", use_container_width=True):
+                        st.session_state.confirm_hapus_item = detail.item_menu.id_menu
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                    st.markdown("<hr style='margin:6px 0; border-color:#181818;'>", unsafe_allow_html=True)
-
+            # Summary
             subtotal = pesanan.hitung_total_sementara()
             pajak_est = subtotal * 0.1
             total_est = subtotal + pajak_est
 
+            st.markdown(f"""
+            <div class="ticket-rail-item"><span>Subtotal</span><span>Rp {subtotal:,.0f}</span></div><div class="ticket-rail-item"><span>Pajak 10%</span><span>Rp {pajak_est:,.0f}</span></div><div class="ticket-rail-total"><span>TOTAL</span><span>Rp {total_est:,.0f}</span></div>""", unsafe_allow_html=True)
+
             st.markdown("<br>", unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.markdown(f"""<div class="metric-card">
-                    <div class="metric-label">Subtotal</div>
-                    <div class="metric-value" style="font-size:1.15rem;">Rp {subtotal:,.0f}</div>
-                </div>""", unsafe_allow_html=True)
-            with c2:
-                st.markdown(f"""<div class="metric-card">
-                    <div class="metric-label">Pajak (10%)</div>
-                    <div class="metric-value" style="font-size:1.15rem;">Rp {pajak_est:,.0f}</div>
-                </div>""", unsafe_allow_html=True)
-            with c3:
-                st.markdown(f"""<div class="metric-card">
-                    <div class="metric-label" style="color:#1c69d4;">Estimasi Total</div>
-                    <div class="metric-value" style="color:#5599ff; font-size:1.15rem;">
-                        Rp {total_est:,.0f}
-                    </div>
-                </div>""", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    pesanan = service.get_pesanan_aktif(nomor_meja)
-    ada_item = len(pesanan.list_detail) > 0
-
-    col_batal, col_spacer, col_kasir = st.columns([2, 4, 2])
-    with col_batal:
-        st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
-        if st.button("Batalkan Pesanan", key="btn_batal", use_container_width=True):
-            try:
-                service.batalkan_pesanan(nomor_meja)
-                set_notif("info", f"Pesanan meja {nomor_meja} telah dibatalkan.")
-                st.session_state.halaman = "peta_meja"
-                st.session_state.meja_dipilih = None
-                st.rerun()
-            except PesananTidakAdaError as e:
-                set_notif("error", str(e)); st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-    with col_kasir:
-        st.markdown("<div class='btn-success'>", unsafe_allow_html=True)
-        if st.button(
-            "Lanjut ke Kasir",
-            key="btn_kasir", use_container_width=True,
-            disabled=not ada_item,
-            help="Tambahkan minimal 1 item untuk lanjut ke kasir" if not ada_item else "Proses pembayaran"
-        ):
-            st.session_state.halaman = "kasir"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if not ada_item:
-        st.markdown("<p style='text-align:right; font-size:0.75rem; color:#444; margin-top:4px;'>"
-                    "Tambahkan minimal satu item untuk bisa lanjut ke kasir.</p>",
-                    unsafe_allow_html=True)
+            ada_item = len(list_detail) > 0
+            col_batal, col_kasir = st.columns(2)
+            with col_batal:
+                st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
+                if st.button("Batalkan", key="btn_batal", use_container_width=True):
+                    try:
+                        service.batalkan_pesanan(nomor_meja)
+                        set_notif("info", f"Pesanan meja {nomor_meja} dibatalkan.")
+                        st.session_state.halaman = st.session_state.get("prev_halaman", "dashboard")
+                        st.session_state.meja_dipilih = None
+                        st.rerun()
+                    except PesananTidakAdaError as e:
+                        set_notif("error", str(e)); st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+            with col_kasir:
+                st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
+                if st.button(
+                    "Kasir →",
+                    key="btn_kasir", use_container_width=True,
+                    disabled=not ada_item,
+                    help="Tambahkan minimal 1 item" if not ada_item else "Proses pembayaran"
+                ):
+                    st.session_state.halaman = "kasir"
+                    st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -873,25 +1282,26 @@ def render_pesanan():
 def render_kasir():
     nomor_meja = st.session_state.meja_dipilih
 
-    col_back, col_title = st.columns([1, 7])
+    col_back, col_title = st.columns([1, 8])
     with col_back:
-        if st.button("Kembali", key="back_kasir"):
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("← Kembali", key="back_kasir"):
             st.session_state.halaman = "pesanan"
             st.rerun()
     with col_title:
-        st.markdown(f'<div class="page-header">Kasir — Meja {nomor_meja}</div>', unsafe_allow_html=True)
-        st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="page-subheader">Ringkasan tagihan dan proses pembayaran</div>',
-                    unsafe_allow_html=True)
+        _render_page_header(
+            f"Kasir — Meja {nomor_meja}",
+            "Ringkasan tagihan dan proses pembayaran"
+        )
 
     tampilkan_notif()
 
     try:
         pesanan = service.get_pesanan_aktif(nomor_meja)
     except PesananTidakAdaError:
-        st.error("Tidak ada pesanan aktif. Kembali ke peta meja.")
-        if st.button("Ke Peta Meja"):
-            st.session_state.halaman = "peta_meja"
+        st.error("Tidak ada pesanan aktif. Kembali ke halaman sebelumnya.")
+        if st.button("← Kembali"):
+            st.session_state.halaman = st.session_state.get("prev_halaman", "dashboard")
             st.session_state.meja_dipilih = None
             st.rerun()
         return
@@ -902,92 +1312,107 @@ def render_kasir():
 
     col_detail, col_bayar = st.columns([3, 2], gap="large")
 
+    # ─────────────── DETAIL PESANAN ───────────────
     with col_detail:
-        st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px;'>"
-                    "Ringkasan Pesanan</p>", unsafe_allow_html=True)
-        st.markdown(f"<span style='font-size:0.72rem; color:#333; font-family:monospace;'>"
+        st.markdown("<p class='section-title'>Ringkasan Pesanan</p>", unsafe_allow_html=True)
+        st.markdown(f"<span style='font-size:11px; color:#383838; font-family:monospace;'>"
                     f"{pesanan.id_pesanan}</span>", unsafe_allow_html=True)
-        st.markdown("<hr style='margin:10px 0; border-color:#181818;'>", unsafe_allow_html=True)
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         for detail in pesanan.list_detail:
             c1, c2 = st.columns([3, 2])
             with c1:
-                st.markdown(f"**{detail.item_menu.nama_menu}** x {detail.kuantitas}")
-                st.markdown(f"<small style='color:#444;'>@ Rp {detail.item_menu.harga_efektif():,.0f}</small>",
-                            unsafe_allow_html=True)
+                st.markdown(f"**{detail.item_menu.nama_menu}** &nbsp; "
+                             f"<span style='color:#383838;'>×{detail.kuantitas}</span>",
+                             unsafe_allow_html=True)
+                st.markdown(f"<small style='color:#383838;'>"
+                             f"@ Rp {detail.item_menu.harga_efektif():,.0f}</small>",
+                             unsafe_allow_html=True)
             with c2:
-                st.markdown(f"<span style='font-weight:700;'>Rp {detail.sub_total:,.0f}</span>",
-                            unsafe_allow_html=True)
-            st.markdown("<hr style='margin:6px 0; border-color:#161616;'>", unsafe_allow_html=True)
+                st.markdown(f"<span style='font-weight:700; color:#888888;'>"
+                             f"Rp {detail.sub_total:,.0f}</span>",
+                             unsafe_allow_html=True)
+            st.markdown("<hr style='margin:6px 0;'>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div style='background:#0d0d0d; border:1px solid #1e1e1e; border-radius:6px; padding:18px;'>
-            <div style='display:flex; justify-content:space-between; margin-bottom:8px;'>
-                <span style='color:#555; font-size:0.85rem;'>Subtotal</span>
-                <span style='color:#bbb;'>Rp {subtotal:,.0f}</span>
+        <div style='background:#0A0A0A; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:20px;'>
+            <div style='display:flex; justify-content:space-between; margin-bottom:10px;'>
+                <span style='color:#888888; font-size:0.85rem;'>Subtotal</span>
+                <span style='color:#888888;'>Rp {subtotal:,.0f}</span>
             </div>
-            <div style='display:flex; justify-content:space-between; margin-bottom:12px;'>
-                <span style='color:#555; font-size:0.85rem;'>Pajak (10%)</span>
-                <span style='color:#bbb;'>Rp {pajak:,.0f}</span>
+            <div style='display:flex; justify-content:space-between; margin-bottom:16px;'>
+                <span style='color:#888888; font-size:0.85rem;'>Pajak (10%)</span>
+                <span style='color:#888888;'>Rp {pajak:,.0f}</span>
             </div>
-            <div style='border-top:1px solid #1e1e1e; padding-top:12px;
+            <div style='border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;
                         display:flex; justify-content:space-between; align-items:center;'>
-                <span style='color:#fff; font-weight:700; font-size:0.9rem;
-                             text-transform:uppercase; letter-spacing:1.5px;'>Total</span>
-                <span style='color:#5599ff; font-weight:800; font-size:1.5rem;'>Rp {total:,.0f}</span>
+                <span style='color:#F0F0F0; font-weight:700; font-size:0.85rem;
+                             text-transform:uppercase; letter-spacing:0.14em;'>Total Tagihan</span>
+                <span style='color:var(--accent-ember); font-weight:900; font-size:1.8rem;'>Rp {total:,.0f}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
+    # ─────────────── PEMBAYARAN ───────────────
     with col_bayar:
-        st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px;'>"
-                    "Pembayaran</p>", unsafe_allow_html=True)
+        st.markdown("<p class='section-title'>Pembayaran</p>", unsafe_allow_html=True)
 
-        st.markdown(f"<p style='font-size:0.75rem; color:#444; margin-bottom:4px;'>"
-                    f"Minimal: <b style='color:#666;'>Rp {total:,.0f}</b></p>",
+        # Shortcut amounts
+        st.markdown("<p style='font-size:11px; color:#383838; margin-bottom:6px;'>Nominal cepat:</p>",
                     unsafe_allow_html=True)
+        shortcuts = [10_000, 20_000, 50_000, 100_000]
+        s_cols = st.columns(4)
+        for i, amt in enumerate(shortcuts):
+            with s_cols[i]:
+                st.markdown("<div class='btn-sm'>", unsafe_allow_html=True)
+                if st.button(f"{amt//1000}K", key=f"shortcut_{amt}",
+                             use_container_width=True):
+                    mult = int(total / amt) + 1
+                    st.session_state["input_uang_val"] = int(amt * mult)
+                    st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
+        default_uang = st.session_state.get("input_uang_val", int(total))
         uang_diterima = st.number_input(
             "Uang Diterima (Rp)",
             min_value=0, max_value=100_000_000,
-            value=int(total), step=1000,
+            value=default_uang, step=1000,
             key="input_uang",
-            help=f"Masukkan nominal uang yang diberikan pelanggan (minimal Rp {total:,.0f})"
+            help=f"Minimal Rp {total:,.0f}"
         )
 
         kembalian = uang_diterima - total
         if uang_diterima >= total:
             st.markdown(f"""
             <div class="kembalian-box">
-                <div class="pay-label" style="color:#0fa336;">Kembalian</div>
-                <div class="pay-amount" style="color:#0fa336;">Rp {kembalian:,.0f}</div>
+                <div class="pay-label" style="color:#27AE60;">Kembalian</div>
+                <div class="pay-amount" style="color:#27AE60;">Rp {kembalian:,.0f}</div>
                 <div class="pay-hint">Uang kembali ke pelanggan</div>
             </div>""", unsafe_allow_html=True)
         else:
             kurang = total - uang_diterima
             st.markdown(f"""
             <div class="kurang-box">
-                <div class="pay-label" style="color:#e22718;">Kurang</div>
-                <div class="pay-amount" style="color:#e22718;">Rp {kurang:,.0f}</div>
+                <div class="pay-label" style="color:#C0392B;">Kurang</div>
+                <div class="pay-amount" style="color:#C0392B;">Rp {kurang:,.0f}</div>
                 <div class="pay-hint">Tambahkan uang yang kurang</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         bayar_disabled = uang_diterima < total
-        st.markdown("<div class='btn-success'>", unsafe_allow_html=True)
+        st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
         if st.button(
             "Selesaikan Pembayaran",
             key="btn_bayar", use_container_width=True,
             disabled=bayar_disabled,
-            help="Uang diterima masih kurang dari total tagihan" if bayar_disabled
-                 else "Klik untuk memproses pembayaran"
+            help="Uang masih kurang" if bayar_disabled else "Proses pembayaran"
         ):
             try:
                 trx = service.proses_checkout(nomor_meja, float(uang_diterima))
                 st.session_state.struk_terakhir = trx.cetak_struk_digital()
+                if "input_uang_val" in st.session_state:
+                    del st.session_state["input_uang_val"]
                 st.session_state.halaman = "struk"
                 st.rerun()
             except UangKurangError as e:
@@ -1002,24 +1427,31 @@ def render_kasir():
 # ============================================================
 
 def render_struk():
-    st.markdown('<div class="page-header">Pembayaran Berhasil</div>', unsafe_allow_html=True)
-    st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subheader">Transaksi selesai. Meja sudah dikosongkan secara otomatis.</div>',
-                unsafe_allow_html=True)
+    _render_page_header(
+        "Pembayaran Berhasil",
+        "Transaksi selesai. Meja sudah dikosongkan secara otomatis."
+    )
 
     st.success("Transaksi berhasil diproses.")
 
     struk = st.session_state.get("struk_terakhir", "")
     if struk:
-        st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.5px; margin: 16px 0 8px 0;'>"
-                    "Struk Digital</p>", unsafe_allow_html=True)
-        st.markdown(f'<div class="struk-container">{struk}</div>', unsafe_allow_html=True)
+        col_struk, col_side = st.columns([2, 1])
+        with col_struk:
+            st.markdown("<p class='section-title'>Struk Digital</p>", unsafe_allow_html=True)
+            st.markdown(f'<pre class="struk-container">{struk}</pre>', unsafe_allow_html=True)
+        with col_side:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("""
+            <div class="stat-card" style="text-align:center;">
+                <div class="stat-label" style="margin-top:8px;">Status</div>
+                <div style="color:#27AE60; font-size:1rem; font-weight:700; margin-top:4px;">Lunas</div>
+            </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
-    if st.button("Kembali ke Peta Meja", key="back_to_peta"):
-        st.session_state.halaman = "peta_meja"
+    if st.button("← Kembali ke Dashboard", key="back_to_dash"):
+        st.session_state.halaman = "dashboard"
         st.session_state.meja_dipilih = None
         st.session_state.struk_terakhir = None
         st.rerun()
@@ -1031,10 +1463,12 @@ def render_struk():
 # ============================================================
 
 def render_kelola_menu():
-    st.markdown('<div class="page-header">Kelola Menu</div>', unsafe_allow_html=True)
-    st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subheader">Tambah, ubah harga, dan kelola ketersediaan menu restoran</div>',
-                unsafe_allow_html=True)
+    if st.button("⬅ Kembali", key="back_kelola_menu"):
+        st.session_state.halaman = "dashboard"
+        st.rerun()
+
+    _render_page_header("Kelola Menu",
+                        "Tambah, ubah harga, dan kelola ketersediaan menu restoran")
 
     tampilkan_notif()
 
@@ -1048,21 +1482,24 @@ def render_kelola_menu():
         if not semua_menu:
             st.markdown("""
             <div class="empty-state">
-                <div class="empty-state-icon">0</div>
+                <div class="empty-state-icon">—</div>
                 <div class="empty-state-title">Belum ada menu</div>
                 <div class="empty-state-desc">Tambahkan menu baru melalui tab <b>Tambah Menu Baru</b>.</div>
             </div>""", unsafe_allow_html=True)
         else:
-            col_s, col_f = st.columns([3, 2])
+            # Filter row
+            col_s, col_f = st.columns([3, 3])
             with col_s:
-                search_kelola = st.text_input("Cari menu",
-                                              placeholder="Cari nama menu...",
-                                              key="search_kelola",
-                                              label_visibility="collapsed")
+                search_kelola = st.text_input(
+                    "Cari", placeholder="Cari nama menu...",
+                    key="search_kelola", label_visibility="collapsed"
+                )
             with col_f:
-                filter_kel = st.radio("Filter", ["Semua", "Tersedia", "Tidak Tersedia"],
-                                      horizontal=True, key="filter_menu_kel",
-                                      label_visibility="collapsed")
+                filter_kel = st.radio(
+                    "Filter", ["Semua", "Tersedia", "Tidak Tersedia"],
+                    horizontal=True, key="filter_menu_kel",
+                    label_visibility="collapsed"
+                )
 
             if filter_kel == "Tersedia":
                 tampil = [m for m in semua_menu if m.is_tersedia]
@@ -1072,40 +1509,46 @@ def render_kelola_menu():
                 tampil = semua_menu
 
             if search_kelola:
-                tampil = [m for m in tampil if search_kelola.lower() in m.nama_menu.lower()]
+                tampil = [m for m in tampil
+                          if search_kelola.lower() in m.nama_menu.lower()]
 
             if not tampil:
                 st.markdown("""
                 <div class="empty-state">
-                    <div class="empty-state-icon">?</div>
+                    <div class="empty-state-icon">—</div>
                     <div class="empty-state-title">Tidak ada hasil</div>
                     <div class="empty-state-desc">Coba ubah filter atau kata kunci pencarian.</div>
                 </div>""", unsafe_allow_html=True)
             else:
-                st.markdown(f"<p style='color:#333; font-size:0.78rem; margin-bottom:12px;'>"
-                            f"Menampilkan {len(tampil)} menu</p>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<p style='color:#383838; font-size:11px; margin-bottom:14px;'>"
+                    f"Menampilkan {len(tampil)} menu</p>",
+                    unsafe_allow_html=True
+                )
 
-                # Konfirmasi nonaktif
+                # Konfirmasi hapus permanen
                 if st.session_state.confirm_nonaktif_menu:
                     id_nonaktif = st.session_state.confirm_nonaktif_menu
                     nama_nonaktif = next(
-                        (m.nama_menu for m in tampil if m.id_menu == id_nonaktif), id_nonaktif
+                        (m.nama_menu for m in tampil if m.id_menu == id_nonaktif),
+                        id_nonaktif
                     )
                     st.markdown(f"""
                     <div class="confirm-box">
-                        <div class="confirm-box-title">Konfirmasi Nonaktifkan</div>
+                        <div class="confirm-box-title">⚠️ Konfirmasi Hapus Permanen</div>
                         <div class="confirm-box-desc">
-                            Nonaktifkan <b style="color:#ccc;">{nama_nonaktif}</b>
-                            dari katalog? Menu tidak akan muncul di pesanan baru.
+                            Hapus <b style="color:#F0F0F0;">{nama_nonaktif}</b>
+                            secara permanen? Data menu akan dihapus dan tidak bisa dikembalikan.
                         </div>
                     </div>""", unsafe_allow_html=True)
                     cc1, cc2, _ = st.columns([1, 1, 5])
                     with cc1:
                         st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
-                        if st.button("Ya, Nonaktifkan", key="konfirm_nonaktif_ya"):
+                        if st.button("Ya, Hapus!", key="konfirm_nonaktif_ya"):
                             try:
                                 service.hapus_menu(id_nonaktif)
-                                set_notif("info", f"{nama_nonaktif} telah dinonaktifkan dari katalog.")
+                                set_notif("success",
+                                          f"{nama_nonaktif} telah dihapus permanen.")
                                 st.session_state.confirm_nonaktif_menu = None
                                 st.rerun()
                             except RestoEaseError as e:
@@ -1117,38 +1560,47 @@ def render_kelola_menu():
                         if st.button("Batal", key="konfirm_nonaktif_batal"):
                             st.session_state.confirm_nonaktif_menu = None
                             st.rerun()
+                    st.markdown("<br>", unsafe_allow_html=True)
 
-                for menu in tampil:
-                    is_spesial = isinstance(menu, MenuSpesial)
-                    is_tersedia = menu.is_tersedia
-                    status_str = "Aktif" if is_tersedia else "Nonaktif"
-                    diskon_str = f"  [Diskon {int(menu.persen_diskon)}%]" if is_spesial else ""
+                # ── Card Grid: 3 kolom ──
+                n_card_cols = 3
+                card_rows = [tampil[i:i+n_card_cols]
+                             for i in range(0, len(tampil), n_card_cols)]
 
-                    with st.expander(
-                        f"{status_str}  —  {menu.nama_menu}  "
-                        f"|  {menu.kategori}  "
-                        f"|  Rp {menu.harga_efektif():,.0f}{diskon_str}",
-                        expanded=False
-                    ):
-                        ec1, ec2, ec3 = st.columns([2, 2, 2])
-                        with ec1:
-                            st.markdown("<p style='color:#444; font-size:0.68rem; "
-                                        "text-transform:uppercase; letter-spacing:1px; "
-                                        "margin-bottom:4px;'>ID Menu</p>", unsafe_allow_html=True)
-                            st.code(menu.id_menu, language=None)
-
+                for card_row in card_rows:
+                    cols = st.columns(n_card_cols)
+                    for col, menu in zip(cols, card_row):
+                        with col:
+                            is_spesial = isinstance(menu, MenuSpesial)
+                            is_tersedia = menu.is_tersedia
                             kat_key = "minuman" if menu.kategori == "Minuman" else "makanan"
+                            inactive_cls = "" if is_tersedia else " inactive"
+
                             badges = f'<span class="badge-{kat_key}">{menu.kategori}</span>'
                             if is_spesial:
-                                badges += f' <span class="badge-diskon">Diskon {menu.persen_diskon:.0f}%</span>'
-                            if not is_tersedia:
-                                badges += ' <span class="badge-nonaktif">Nonaktif</span>'
-                            st.markdown(badges, unsafe_allow_html=True)
+                                badges += f' <span class="badge-diskon">Diskon {int(menu.persen_diskon)}%</span>'
+                            badges += f' <span class="badge-{"aktif" if is_tersedia else "nonaktif"}">' \
+                                      f'{"Aktif" if is_tersedia else "Nonaktif"}</span>'
 
-                        with ec2:
-                            st.markdown("<p style='color:#444; font-size:0.68rem; "
-                                        "text-transform:uppercase; letter-spacing:1px; "
-                                        "margin-bottom:4px;'>Update Harga</p>", unsafe_allow_html=True)
+                            if is_spesial:
+                                harga_display = (
+                                    f'<span style="color:#383838; text-decoration:line-through; '
+                                    f'font-size:0.78rem;">Rp {menu.harga:,.0f}</span><br>'
+                                    f'<span class="menu-mgmt-harga">Rp {menu.harga_efektif():,.0f}</span>'
+                                )
+                            else:
+                                harga_display = (
+                                    f'<span class="menu-mgmt-harga">Rp {menu.harga_efektif():,.0f}</span>'
+                                )
+
+                            st.markdown(f"""
+                            <div class="menu-mgmt-card{inactive_cls}">
+                                <div class="menu-mgmt-nama">{menu.nama_menu}</div>
+                                <div style="margin-bottom:8px;">{badges}</div>
+                                <div>{harga_display}</div>
+                            </div>""", unsafe_allow_html=True)
+
+                            # Edit harga langsung
                             harga_baru = st.number_input(
                                 "Harga baru (Rp)",
                                 min_value=500, max_value=10_000_000,
@@ -1158,72 +1610,85 @@ def render_kelola_menu():
                                 help="Masukkan harga baru lalu klik Simpan"
                             )
                             if is_spesial:
-                                harga_efektif_baru = harga_baru * (1 - menu.persen_diskon / 100)
+                                harga_eff_new = harga_baru * (1 - menu.persen_diskon / 100)
                                 st.markdown(
-                                    f"<small style='color:#444;'>Setelah diskon: "
-                                    f"<b style='color:#666;'>Rp {harga_efektif_baru:,.0f}</b></small>",
-                                    unsafe_allow_html=True)
-                            st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
-                            if st.button("Simpan Harga", key=f"upd_harga_{menu.id_menu}",
-                                         use_container_width=True):
-                                try:
-                                    service.update_harga_menu(menu.id_menu, float(harga_baru))
-                                    set_notif("success",
-                                              f"Harga {menu.nama_menu} diperbarui menjadi Rp {harga_baru:,.0f}.")
-                                    st.rerun()
-                                except (MenuTidakDitemukanError, InputTidakValidError) as e:
-                                    set_notif("error", str(e)); st.rerun()
-                            st.markdown("</div>", unsafe_allow_html=True)
+                                    f"<small style='color:#383838;'>Setelah diskon: "
+                                    f"<b style='color:#888888;'>Rp {harga_eff_new:,.0f}</b></small>",
+                                    unsafe_allow_html=True
+                                )
 
-                        with ec3:
-                            st.markdown("<p style='color:#444; font-size:0.68rem; "
-                                        "text-transform:uppercase; letter-spacing:1px; "
-                                        "margin-bottom:4px;'>Status dan Aksi</p>", unsafe_allow_html=True)
-                            toggle_label = "Aktif — Klik untuk nonaktifkan" if is_tersedia \
-                                else "Nonaktif — Klik untuk aktifkan"
-                            if st.button(toggle_label, key=f"toggle_{menu.id_menu}",
-                                         use_container_width=True):
-                                try:
-                                    status_baru = service.toggle_ketersediaan_menu(menu.id_menu)
-                                    label_status = "diaktifkan" if status_baru else "dinonaktifkan"
-                                    set_notif("info", f"{menu.nama_menu} {label_status}.")
-                                    st.rerun()
-                                except RestoEaseError as e:
-                                    set_notif("error", str(e)); st.rerun()
+                            col_save, col_toggle = st.columns(2)
+                            with col_save:
+                                st.markdown("<div class='btn-accent btn-sm'>",
+                                            unsafe_allow_html=True)
+                                if st.button("Simpan", key=f"upd_harga_{menu.id_menu}",
+                                             use_container_width=True):
+                                    try:
+                                        service.update_harga_menu(
+                                            menu.id_menu, float(harga_baru)
+                                        )
+                                        set_notif(
+                                            "success",
+                                            f"Harga {menu.nama_menu} → Rp {harga_baru:,.0f}"
+                                        )
+                                        st.rerun()
+                                    except (MenuTidakDitemukanError, InputTidakValidError) as e:
+                                        set_notif("error", str(e)); st.rerun()
+                                st.markdown("</div>", unsafe_allow_html=True)
+                            with col_toggle:
+                                t_label = "Nonaktifkan" if is_tersedia else "Aktifkan"
+                                t_css = "btn-danger btn-sm" if is_tersedia else "btn-sm"
+                                st.markdown(f"<div class='{t_css}'>",
+                                            unsafe_allow_html=True)
+                                if st.button(t_label, key=f"toggle_{menu.id_menu}",
+                                             use_container_width=True):
+                                    try:
+                                        status_baru = service.toggle_ketersediaan_menu(
+                                            menu.id_menu
+                                        )
+                                        label_s = "diaktifkan" if status_baru else "dinonaktifkan"
+                                        set_notif("info", f"{menu.nama_menu} {label_s}.")
+                                        st.rerun()
+                                    except RestoEaseError as e:
+                                        set_notif("error", str(e)); st.rerun()
+                                st.markdown("</div>", unsafe_allow_html=True)
 
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            st.markdown("<div class='btn-danger'>", unsafe_allow_html=True)
-                            if st.button("Nonaktifkan Permanen", key=f"hapus_{menu.id_menu}",
+                            st.markdown("<div class='btn-danger btn-sm'>",
+                                        unsafe_allow_html=True)
+                            if st.button("Hapus Permanen", key=f"hapus_{menu.id_menu}",
                                          use_container_width=True,
-                                         help="Menu akan dihapus dari katalog pelanggan"):
+                                         help="Nonaktifkan permanen dari katalog"):
                                 st.session_state.confirm_nonaktif_menu = menu.id_menu
                                 st.rerun()
                             st.markdown("</div>", unsafe_allow_html=True)
 
     # ── TAB TAMBAH MENU ──
     with tab_tambah:
-        st.markdown("<p style='font-size:0.88rem; color:#fff; font-weight:700; "
-                    "text-transform:uppercase; letter-spacing:1.5px; margin-bottom:16px;'>"
-                    "Tambah Menu Baru</p>", unsafe_allow_html=True)
+        col_form, col_preview = st.columns([3, 2], gap="large")
 
-        with st.form("form_tambah_menu", clear_on_submit=True):
-            c1, c2 = st.columns(2)
-            with c1:
+        with col_form:
+            st.markdown("<p class='section-title'>Informasi Menu</p>", unsafe_allow_html=True)
+            with st.form("form_tambah_menu", clear_on_submit=True):
                 nama_input = st.text_input(
                     "Nama Menu *",
                     placeholder="Contoh: Nasi Goreng Spesial",
-                    help="Nama menu yang akan ditampilkan ke pelanggan"
+                    help="Nama yang ditampilkan ke pelanggan"
                 )
-                kategori_input = st.selectbox(
-                    "Kategori *", ["Makanan", "Minuman"],
-                    help="Pilih kategori menu"
-                )
-            with c2:
-                harga_input = st.number_input(
-                    "Harga (Rp) *",
-                    min_value=500, max_value=10_000_000, value=15000, step=500,
-                    help="Harga sebelum diskon"
-                )
+
+                col_kat, col_harga = st.columns(2)
+                with col_kat:
+                    kategori_input = st.selectbox(
+                        "Kategori *", ["Makanan", "Minuman"],
+                        help="Pilih kategori menu"
+                    )
+                with col_harga:
+                    harga_input = st.number_input(
+                        "Harga (Rp) *",
+                        min_value=500, max_value=10_000_000,
+                        value=15000, step=500,
+                        help="Harga sebelum diskon"
+                    )
+
                 tipe_menu = st.radio(
                     "Tipe Menu",
                     ["Menu Biasa", "Menu Spesial (Ada Diskon)"],
@@ -1231,54 +1696,80 @@ def render_kelola_menu():
                     help="Pilih Menu Spesial jika ada potongan harga"
                 )
 
-            diskon_input = 0.0
-            if tipe_menu == "Menu Spesial (Ada Diskon)":
-                diskon_input = st.slider("Persentase Diskon (%)", min_value=1, max_value=99, value=10)
-                harga_setelah = harga_input * (1 - diskon_input / 100)
-                st.info(f"Harga setelah diskon {diskon_input}%: **Rp {harga_setelah:,.0f}**")
+                diskon_input = 0.0
+                if tipe_menu == "Menu Spesial (Ada Diskon)":
+                    diskon_input = st.slider(
+                        "Persentase Diskon (%)",
+                        min_value=1, max_value=99, value=10
+                    )
+                    harga_setelah = harga_input * (1 - diskon_input / 100)
+                    st.info(f"Harga setelah diskon: **Rp {harga_setelah:,.0f}**")
 
-            # Preview
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
+                submitted = st.form_submit_button(
+                    "Tambah Menu", use_container_width=True
+                )
+                st.markdown("</div>", unsafe_allow_html=True)
+
+                if submitted:
+                    if not nama_input.strip():
+                        set_notif("error", "Nama menu tidak boleh kosong!")
+                        st.rerun()
+                    else:
+                        try:
+                            menu_baru = service.tambah_menu(
+                                nama=nama_input,
+                                harga=float(harga_input),
+                                kategori=kategori_input,
+                                persen_diskon=float(diskon_input)
+                            )
+                            set_notif(
+                                "success",
+                                f"Menu '{menu_baru.nama_menu}' berhasil ditambahkan. "
+                                f"(ID: {menu_baru.id_menu})"
+                            )
+                            st.rerun()
+                        except InputTidakValidError as e:
+                            set_notif("error", f"Input tidak valid: {e}"); st.rerun()
+                        except RestoEaseError as e:
+                            set_notif("error", str(e)); st.rerun()
+
+        with col_preview:
+            st.markdown("<p class='section-title'>Preview Card</p>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             if nama_input:
-                st.markdown("<hr style='border-color:#181818; margin:12px 0;'>", unsafe_allow_html=True)
-                st.markdown("<p style='color:#444; font-size:0.68rem; text-transform:uppercase; "
-                            "letter-spacing:1px; margin-bottom:8px;'>Preview</p>",
-                            unsafe_allow_html=True)
                 kat_key = "minuman" if kategori_input == "Minuman" else "makanan"
                 badge_prev = f'<span class="badge-{kat_key}">{kategori_input}</span>'
                 if tipe_menu == "Menu Spesial (Ada Diskon)":
                     badge_prev += f' <span class="badge-diskon">Diskon {diskon_input:.0f}%</span>'
                 harga_eff_prev = harga_input * (1 - diskon_input / 100)
-                st.markdown(f"""
-                <div class="menu-card" style="max-width:400px;">
-                    <div style="font-weight:700; color:#fff; margin-bottom:4px;">{nama_input}</div>
-                    <div style="margin-bottom:6px;">{badge_prev}</div>
-                    <div style="color:#5599ff; font-weight:700;">Rp {harga_eff_prev:,.0f}</div>
-                </div>""", unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("Tambah Menu", use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-            if submitted:
-                if not nama_input.strip():
-                    set_notif("error", "Nama menu tidak boleh kosong!")
-                    st.rerun()
-                else:
-                    try:
-                        menu_baru = service.tambah_menu(
-                            nama=nama_input,
-                            harga=float(harga_input),
-                            kategori=kategori_input,
-                            persen_diskon=float(diskon_input)
-                        )
-                        set_notif("success",
-                                  f"Menu '{menu_baru.nama_menu}' berhasil ditambahkan. "
-                                  f"(ID: {menu_baru.id_menu})")
-                        st.rerun()
-                    except InputTidakValidError as e:
-                        set_notif("error", f"Input tidak valid: {e}"); st.rerun()
-                    except RestoEaseError as e:
-                        set_notif("error", str(e)); st.rerun()
+                harga_prev_html = ""
+                if diskon_input > 0:
+                    harga_prev_html = (
+                        f'<div style="color:#383838; text-decoration:line-through; '
+                        f'font-size:0.78rem; margin-bottom:2px;">Rp {harga_input:,.0f}</div>'
+                    )
+                harga_prev_html += (
+                    f'<div class="menu-mgmt-harga">Rp {harga_eff_prev:,.0f}</div>'
+                )
+
+                st.markdown(f"""
+                <div class="menu-mgmt-card" style="border-color:var(--accent-ember);">
+                    <div class="menu-mgmt-nama">{nama_input}</div>
+                    <div style="margin-bottom:8px;">{badge_prev} <span class="badge-aktif">Aktif</span></div>
+                    {harga_prev_html}
+                    <div style="color:#383838; font-size:11px; margin-top:10px;">ID: akan di-generate otomatis</div>
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="text-align:center; padding:48px 16px; color:#222222; border:1px dashed rgba(255,255,255,0.05);
+                            border-radius:8px;">
+                    <div style="font-size:10px; font-weight:700; text-transform:uppercase;
+                                letter-spacing:0.14em; color:#383838; margin-bottom:10px;">PREVIEW</div>
+                    <div style="font-size:11px;">Isi nama menu untuk melihat preview</div>
+                </div>""", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -1286,10 +1777,11 @@ def render_kelola_menu():
 # ============================================================
 
 def render_riwayat():
-    st.markdown('<div class="page-header">Riwayat Transaksi</div>', unsafe_allow_html=True)
-    st.markdown('<div class="m-stripe"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="page-subheader">Semua transaksi yang telah diselesaikan</div>',
-                unsafe_allow_html=True)
+    if st.button("⬅ Kembali", key="back_riwayat_btn"):
+        st.session_state.halaman = "dashboard"
+        st.rerun()
+
+    _render_page_header("Riwayat Transaksi", "Semua pesanan yang telah dibayar dan selesai")
 
     tampilkan_notif()
 
@@ -1298,7 +1790,7 @@ def render_riwayat():
     if not riwayat:
         st.markdown("""
         <div class="empty-state">
-            <div class="empty-state-icon">0</div>
+            <div class="empty-state-icon">—</div>
             <div class="empty-state-title">Belum ada transaksi</div>
             <div class="empty-state-desc">
                 Transaksi akan muncul di sini setelah checkout pertama selesai.
@@ -1316,41 +1808,46 @@ def render_riwayat():
             item_counter[detail.item_menu.nama_menu] += detail.kuantitas
     terlaris_nama, terlaris_qty = item_counter.most_common(1)[0] if item_counter else ("—", 0)
 
+    # ── Stat Cards ──
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Total Transaksi</div>
-            <div class="metric-value">{len(riwayat)}</div>
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Total Transaksi</div>
+            <div class="stat-value">{len(riwayat)}</div>
         </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Total Pendapatan</div>
-            <div class="metric-value" style="font-size:1.05rem;">Rp {total_pendapatan:,.0f}</div>
+        st.markdown(f"""
+        <div class="stat-card stat-card-accent">
+            <div class="stat-label">Total Pendapatan</div>
+            <div class="stat-value-sm">Rp {total_pendapatan:,.0f}</div>
         </div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label">Rata-rata / Transaksi</div>
-            <div class="metric-value" style="font-size:1.05rem;">Rp {rata:,.0f}</div>
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Rata-rata / Transaksi</div>
+            <div class="stat-value-sm">Rp {rata:,.0f}</div>
         </div>""", unsafe_allow_html=True)
     with c4:
-        st.markdown(f"""<div class="metric-card">
-            <div class="metric-label" style="color:#ffa500;">Terlaris</div>
-            <div class="metric-value" style="font-size:0.85rem; color:#ffa500;">{terlaris_nama}</div>
-            <div class="metric-sub">{terlaris_qty} porsi terjual</div>
+        st.markdown(f"""
+        <div class="stat-card">
+            <div class="stat-label">Menu Terlaris</div>
+            <div class="stat-value-sm" style="font-size:0.95rem;">{terlaris_nama}</div>
+            <div class="stat-sub">{terlaris_qty} porsi terjual</div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # ── Filter ──
     semua_nomor_meja = sorted(set(
         t.pesanan_terkait.meja_aktif.nomor_meja for t in riwayat
     ))
-    col_filt_rw, _ = st.columns([2, 5])
-    with col_filt_rw:
+    col_filt, _ = st.columns([2, 5])
+    with col_filt:
         pilihan_meja = st.selectbox(
             "Filter per Meja",
             options=["Semua Meja"] + [f"Meja {n}" for n in semua_nomor_meja],
             key="filter_riwayat_meja",
-            help="Filter transaksi berdasarkan nomor meja"
         )
 
     if pilihan_meja != "Semua Meja":
@@ -1362,39 +1859,45 @@ def render_riwayat():
 
     if not tampil_riwayat:
         st.info(f"Tidak ada transaksi untuk {pilihan_meja}.")
-    else:
-        st.markdown(f"<p style='color:#333; font-size:0.78rem; margin-bottom:8px;'>"
-                    f"Menampilkan {len(tampil_riwayat)} transaksi (terbaru di atas)</p>",
-                    unsafe_allow_html=True)
-        for trx in reversed(tampil_riwayat):
-            meja_no = trx.pesanan_terkait.meja_aktif.nomor_meja
-            n_items = sum(d.kuantitas for d in trx.pesanan_terkait.list_detail)
-            with st.expander(
-                f"{trx.id_transaksi}  |  Meja {meja_no}  |  "
-                f"{n_items} item  |  Rp {trx.total_akhir:,.0f}",
-                expanded=False
-            ):
-                col_struk, col_info = st.columns([3, 1])
-                with col_struk:
-                    st.markdown(f'<div class="struk-container">{trx.cetak_struk_digital()}</div>',
-                                unsafe_allow_html=True)
-                with col_info:
-                    st.markdown(f"""
-                    <div class="metric-card" style="margin-bottom:8px;">
-                        <div class="metric-label">Total Tagihan</div>
-                        <div class="metric-value" style="font-size:0.95rem;">Rp {trx.total_akhir:,.0f}</div>
+        return
+
+    st.markdown(
+        f"<p style='color:#383838; font-size:11px; margin-bottom:8px;'>"
+        f"Menampilkan {len(tampil_riwayat)} transaksi (terbaru di atas)</p>",
+        unsafe_allow_html=True
+    )
+
+    for trx in reversed(tampil_riwayat):
+        meja_no = trx.pesanan_terkait.meja_aktif.nomor_meja
+        n_items = sum(d.kuantitas for d in trx.pesanan_terkait.list_detail)
+        exp_label = (
+            f"Meja {meja_no}  ·  {n_items} item  ·  Rp {trx.total_akhir:,.0f}  "
+            f"  [{trx.id_transaksi[:16]}…]"
+        )
+        with st.expander(exp_label, expanded=False):
+            col_struk, col_info = st.columns([3, 1])
+            with col_struk:
+                st.markdown(
+                    f'<pre class="struk-container">{trx.cetak_struk_digital()}</pre>',
+                    unsafe_allow_html=True
+                )
+            with col_info:
+                st.markdown(f"""
+                <div class="metric-card" style="margin-bottom:8px;">
+                    <div class="metric-label">Total Tagihan</div>
+                    <div class="metric-value" style="font-size:0.95rem;">Rp {trx.total_akhir:,.0f}</div>
+                </div>
+                <div class="metric-card" style="margin-bottom:8px;">
+                    <div class="metric-label" style="color:#27AE60;">Kembalian</div>
+                    <div class="metric-value" style="font-size:0.95rem; color:#27AE60;">
+                        Rp {trx.kembalian:,.0f}
                     </div>
-                    <div class="metric-card" style="margin-bottom:8px;">
-                        <div class="metric-label" style="color:#0fa336;">Kembalian</div>
-                        <div class="metric-value" style="font-size:0.95rem; color:#0fa336;">
-                            Rp {trx.kembalian:,.0f}
-                        </div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-label">Jumlah Item</div>
-                        <div class="metric-value">{n_items}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Jumlah Item</div>
+                    <div class="metric-value">{n_items}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
 
 # ============================================================
@@ -1407,17 +1910,19 @@ def main():
 
     halaman = st.session_state.halaman
 
-    if halaman == "peta_meja":
+    if halaman == "dashboard":
+        render_dashboard()
+    elif halaman == "peta_meja":
         render_peta_meja()
     elif halaman == "pesanan":
         if st.session_state.meja_dipilih is None:
-            st.session_state.halaman = "peta_meja"
+            st.session_state.halaman = "dashboard"
             st.rerun()
         else:
             render_pesanan()
     elif halaman == "kasir":
         if st.session_state.meja_dipilih is None:
-            st.session_state.halaman = "peta_meja"
+            st.session_state.halaman = "dashboard"
             st.rerun()
         else:
             render_kasir()
@@ -1428,7 +1933,7 @@ def main():
     elif halaman == "riwayat":
         render_riwayat()
     else:
-        st.session_state.halaman = "peta_meja"
+        st.session_state.halaman = "dashboard"
         st.rerun()
 
 

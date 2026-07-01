@@ -153,20 +153,21 @@ def toggle_ketersediaan_menu(id_menu: str) -> bool:
 
 
 def hapus_menu(id_menu: str) -> None:
-    """DELETE — Nonaktifkan menu (Soft Delete) agar tidak merusak pesanan aktif.
+    """DELETE — Hapus menu secara permanen (Hard Delete).
     
-    [PERBAIKAN CELAH 4]: Menggunakan soft delete (set is_tersedia=False)
-    alih-alih hard delete dari dictionary, untuk menjaga integritas referensi
-    menu yang sedang ada di pesanan aktif.
-    
-    Menu yang di-soft-delete tidak akan muncul di katalog pesanan baru,
-    namun referensinya di dalam pesanan aktif yang sudah ada tetap aman.
+    Menu tidak bisa dihapus jika sedang berada dalam pesanan aktif.
     """
     try:
+        # Cek apakah menu ada di pesanan aktif
+        for pesanan in storage.pesanan_aktif.values():
+            for detail in pesanan.list_detail:
+                if detail.item_menu.id_menu == id_menu:
+                    raise RestoEaseError("Menu tidak bisa dihapus karena sedang ada di pesanan aktif.")
+                
         menu = get_menu_by_id(id_menu)
-        menu.set_ketersediaan(False)
+        del storage.daftar_menu[id_menu]
         storage.save_menu()
-    except MenuTidakDitemukanError:
+    except (MenuTidakDitemukanError, RestoEaseError):
         raise
     except Exception as e:
         raise RestoEaseError(f"Gagal menghapus menu: {e}") from e
@@ -407,3 +408,11 @@ def get_riwayat_transaksi() -> list[Transaksi]:
         return list(storage.riwayat_transaksi)
     except Exception as e:
         raise RestoEaseError(f"Gagal mengambil riwayat transaksi: {e}") from e
+
+
+def hapus_semua_data() -> None:
+    """Menghapus seluruh database dan mereset aplikasi."""
+    try:
+        storage.hapus_semua_data()
+    except Exception as e:
+        raise RestoEaseError(f"Gagal menghapus seluruh database: {e}") from e
