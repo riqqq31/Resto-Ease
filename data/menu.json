@@ -1,0 +1,20 @@
+[
+  {
+    "id_menu": "MNU-NASI",
+    "nama_menu": "nasi",
+    "harga": 20000.0,
+    "kategori": "Makanan",
+    "is_tersedia": true,
+    "tipe": "MenuSpesial",
+    "persen_diskon": 10.0
+  },
+  {
+    "id_menu": "MNU-NASIGORENG",
+    "nama_menu": "nasi goreng",
+    "harga": 17000.0,
+    "kategori": "Makanan",
+    "is_tersedia": true,
+    "tipe": "MenuSpesial",
+    "persen_diskon": 10.0
+  }
+]
