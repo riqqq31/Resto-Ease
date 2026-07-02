@@ -1916,30 +1916,34 @@ def render_kelola_menu():
             if tipe_menu == "Menu Spesial (Ada Diskon)":
                 diskon_input = 10.0
 
+            # ── Kategori & Harga di LUAR form agar perubahan langsung trigger rerun ──
+            col_kat, col_harga = st.columns(2)
+            with col_kat:
+                kategori_input = st.selectbox(
+                    "Kategori *", ["Makanan", "Minuman"],
+                    help="Pilih kategori menu",
+                    key="tambah_kategori"
+                )
+            with col_harga:
+                harga_input = st.number_input(
+                    "Harga (Rp) *",
+                    min_value=500, max_value=10_000_000,
+                    value=15000, step=500,
+                    help="Harga sebelum diskon" if diskon_input > 0 else "Harga menu",
+                    key="tambah_harga"
+                )
+
+            if diskon_input > 0:
+                harga_setelah = harga_input * (1 - diskon_input / 100)
+                st.info(f"Diskon tetap **10%** — Harga setelah diskon: **Rp {harga_setelah:,.0f}**")
+
+            # ── Form hanya untuk nama + submit (agar text_input tidak rerun tiap keystroke) ──
             with st.form("form_tambah_menu", clear_on_submit=True):
                 nama_input = st.text_input(
                     "Nama Menu *",
                     placeholder="Contoh: Nasi Goreng Spesial",
                     help="Nama yang ditampilkan ke pelanggan"
                 )
-
-                col_kat, col_harga = st.columns(2)
-                with col_kat:
-                    kategori_input = st.selectbox(
-                        "Kategori *", ["Makanan", "Minuman"],
-                        help="Pilih kategori menu"
-                    )
-                with col_harga:
-                    harga_input = st.number_input(
-                        "Harga (Rp) *",
-                        min_value=500, max_value=10_000_000,
-                        value=15000, step=500,
-                        help="Harga sebelum diskon" if diskon_input > 0 else "Harga menu"
-                    )
-
-                if diskon_input > 0:
-                    harga_setelah = harga_input * (1 - diskon_input / 100)
-                    st.info(f"Diskon tetap **10%** — Harga setelah diskon: **Rp {harga_setelah:,.0f}**")
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("<div class='btn-accent'>", unsafe_allow_html=True)
