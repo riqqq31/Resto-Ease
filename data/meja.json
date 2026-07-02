@@ -1,0 +1,34 @@
+[
+  {
+    "nomor_meja": 1,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 2,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 3,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 4,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 5,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 6,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 7,
+    "is_tersedia": true
+  },
+  {
+    "nomor_meja": 8,
+    "is_tersedia": true
+  }
+]
