@@ -1,3 +1,10 @@
+[server]
+headless = true
+enableStaticServing = false
+
+[browser]
+gatherUsageStats = false
+
 [theme]
 base = "dark"
 backgroundColor = "#171310"
