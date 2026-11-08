@@ -5,7 +5,7 @@
 import streamlit as st
 import storage
 import service
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from exceptions import (
     RestoEaseError,
     MenuTidakDitemukanError,
@@ -15,6 +15,20 @@ from exceptions import (
     ItemPesananTidakAdaError,
     UangKurangError,
 )
+
+# ============================================================
+# ZONA WAKTU
+# ============================================================
+# Server (mis. Streamlit Cloud) berjalan di UTC, jadi datetime.now()
+# akan menampilkan jam yang mundur 7 jam dari WIB. Semua tampilan waktu
+# harus memakai helper ini agar konsisten UTC+7 di mana pun dijalankan.
+WIB = timezone(timedelta(hours=7), "WIB")
+
+
+def sekarang() -> datetime:
+    """Waktu sekarang dalam zona WIB (UTC+7)."""
+    return datetime.now(WIB)
+
 
 # ============================================================
 # KONFIGURASI HALAMAN & CSS
@@ -723,7 +737,7 @@ def set_notif(tipe: str, pesan: str):
 
 def render_sidebar():
     with st.sidebar:
-        now = datetime.now()
+        now = sekarang()
         hari = ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"][now.weekday()]
         tgl_str = now.strftime(f"{hari}, %d %b %Y")
         jam_str = now.strftime("%H:%M")
@@ -921,7 +935,7 @@ def _render_struk_html(trx) -> str:
 # ============================================================
 
 def render_dashboard():
-    now = datetime.now()
+    now = sekarang()
     jam_str = now.strftime("%H:%M")
     tgl_str = now.strftime("%A, %d %B %Y")
     hour = now.hour
